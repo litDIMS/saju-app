@@ -1490,12 +1490,241 @@ function shareKakao() {
   copyShareLink();
 }
 
-function shareInsta() {
-  // 인스타는 직접 URL 공유가 안 되므로 링크 복사 후 안내
-  copyShareLink();
+async function shareInsta() {
+  if (!currentChart) return;
+  // Canvas로 스토리 이미지 생성
+  const canvas = await generateStoryImage(currentChart);
+  const blob = await new Promise(r => canvas.toBlob(r, 'image/png'));
+  const file = new File([blob], 'saju-story.png', { type: 'image/png' });
+
+  // 모바일: navigator.share로 공유 시트 열기
+  if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+    try {
+      await navigator.share({
+        files: [file],
+        title: '내 사주 이야기',
+        text: '사주명리로 본 나의 운명 ✨',
+      });
+      return;
+    } catch(e) {
+      if (e.name === 'AbortError') return; // 사용자가 취소
+    }
+  }
+
+  // PC 폴백: 이미지 다운로드
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'saju-story.png';
+  a.click();
+  URL.revokeObjectURL(url);
   setTimeout(() => {
-    alert('링크를 복사했어요!\n인스타그램 스토리 → 링크 스티커에 붙여넣기 하세요 📸');
-  }, 300);
+    alert('이미지를 저장했어요! 📸\n인스타그램 앱에서 스토리에 올려보세요.');
+  }, 500);
+}
+
+async function generateStoryImage(chart) {
+  const W = 1080, H = 1920;
+  const canvas = document.createElement('canvas');
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+
+  const elColor = {목:'#3a7d44',화:'#c0392b',토:'#c9a84c',금:'#7f8c9a',수:'#2471a3'};
+
+  // ── 배경 ──
+  const bg = ctx.createLinearGradient(0,0,0,H);
+  bg.addColorStop(0,   '#1a1410');
+  bg.addColorStop(0.5, '#2d2318');
+  bg.addColorStop(1,   '#1a1410');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+
+  // 배경 원형 글로우
+  const glow = ctx.createRadialGradient(W/2, H*0.35, 0, W/2, H*0.35, 500);
+  glow.addColorStop(0, 'rgba(201,168,76,0.12)');
+  glow.addColorStop(1, 'transparent');
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, W, H);
+
+  // ── 상단 장식선 ──
+  ctx.strokeStyle = 'rgba(201,168,76,0.4)';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(80, 120); ctx.lineTo(W-80, 120); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(80, 126); ctx.lineTo(W-80, 126); ctx.stroke();
+
+  // ── 앱 이름 ──
+  ctx.fillStyle = '#c9a84c';
+  ctx.font = 'bold 52px serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('命 사주명리', W/2, 100);
+
+  // ── 이름 / 생년월일 ──
+  ctx.fillStyle = 'rgba(245,240,232,0.6)';
+  ctx.font = '36px sans-serif';
+  const nameStr = chart.name ? chart.name + ' · ' : '';
+  ctx.fillText(nameStr + chart.year + '년 ' + chart.month + '월 ' + chart.day + '일생', W/2, 210);
+
+  // ── 일간 강조 ──
+  ctx.fillStyle = '#c9a84c';
+  ctx.font = 'bold 44px serif';
+  ctx.fillText('일간 ' + chart.dp.stem.cn + '(' + chart.dp.stem.kr + ') · ' + chart.dp.stem.el, W/2, 290);
+
+  // ── 사주 4기둥 ──
+  const pillars = [
+    { label:'년주', p: chart.yp },
+    { label:'월주', p: chart.mp },
+    { label:'일주', p: chart.dp },
+    { label:'시주', p: chart.hp },
+  ].filter(x => x.p);
+
+  const boxW = 210, boxH = 280, gap = 20;
+  const totalW = pillars.length * boxW + (pillars.length-1) * gap;
+  const startX = (W - totalW) / 2;
+  const boxY = 360;
+
+  pillars.forEach((item, i) => {
+    const x = startX + i * (boxW + gap);
+    const isDay = item.label === '일주';
+
+    // 박스 배경
+    ctx.fillStyle = isDay ? 'rgba(201,168,76,0.15)' : 'rgba(245,240,232,0.06)';
+    roundRect(ctx, x, boxY, boxW, boxH, 20);
+    ctx.fill();
+
+    // 박스 테두리
+    ctx.strokeStyle = isDay ? 'rgba(201,168,76,0.8)' : 'rgba(245,240,232,0.15)';
+    ctx.lineWidth = isDay ? 2 : 1;
+    roundRect(ctx, x, boxY, boxW, boxH, 20);
+    ctx.stroke();
+
+    // 라벨
+    ctx.fillStyle = 'rgba(245,240,232,0.4)';
+    ctx.font = '26px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(item.label, x + boxW/2, boxY + 40);
+
+    // 천간 한자
+    ctx.fillStyle = elColor[item.p.stem.el] || '#c9a84c';
+    ctx.font = 'bold 88px serif';
+    ctx.fillText(item.p.stem.cn, x + boxW/2, boxY + 140);
+
+    // 구분선
+    ctx.strokeStyle = 'rgba(245,240,232,0.15)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(x + 20, boxY + 158);
+    ctx.lineTo(x + boxW - 20, boxY + 158);
+    ctx.stroke();
+
+    // 지지 한자
+    ctx.fillStyle = elColor[item.p.branch.el] || '#888';
+    ctx.font = 'bold 76px serif';
+    ctx.fillText(item.p.branch.cn, x + boxW/2, boxY + 240);
+  });
+
+  // ── 오행 분포 ──
+  const elY = boxY + boxH + 80;
+  ctx.fillStyle = 'rgba(245,240,232,0.8)';
+  ctx.font = 'bold 38px serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('오행 분포', W/2, elY);
+
+  const els = ['목','화','토','금','수'];
+  const elCN = ['木','火','土','金','水'];
+  const counts = chart.elCounts;
+  const maxCount = Math.max(...els.map(e => counts[e])) || 1;
+
+  const barW = 120, barMaxH = 200, barGap = 60;
+  const barTotalW = els.length * barW + (els.length-1) * barGap;
+  const barStartX = (W - barTotalW) / 2;
+  const barBaseY = elY + 260;
+
+  els.forEach((el, i) => {
+    const bx = barStartX + i * (barW + barGap);
+    const bh = Math.max(12, (counts[el] / maxCount) * barMaxH);
+
+    // 바 배경
+    ctx.fillStyle = 'rgba(245,240,232,0.08)';
+    roundRect(ctx, bx, barBaseY - barMaxH, barW, barMaxH, 10);
+    ctx.fill();
+
+    // 바
+    ctx.fillStyle = elColor[el];
+    roundRect(ctx, bx, barBaseY - bh, barW, bh, 10);
+    ctx.fill();
+
+    // 개수
+    ctx.fillStyle = '#f5f0e8';
+    ctx.font = 'bold 34px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(counts[el] + '개', bx + barW/2, barBaseY + 50);
+
+    // 한자 라벨
+    ctx.fillStyle = elColor[el];
+    ctx.font = 'bold 36px serif';
+    ctx.fillText(elCN[i] + ' ' + el, bx + barW/2, barBaseY + 100);
+  });
+
+  // ── 음양 바 ──
+  const yyY = barBaseY + 160;
+  const total = chart.yyCounts.yang + chart.yyCounts.yin;
+  const yangPct = total ? chart.yyCounts.yang / total : 0.5;
+
+  ctx.fillStyle = 'rgba(245,240,232,0.6)';
+  ctx.font = '34px sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText('양(陽) ' + chart.yyCounts.yang + '개', 120, yyY);
+  ctx.textAlign = 'right';
+  ctx.fillText('음(陰) ' + chart.yyCounts.yin + '개', W-120, yyY);
+
+  const barY2 = yyY + 20;
+  ctx.fillStyle = 'rgba(245,240,232,0.1)';
+  roundRect(ctx, 120, barY2, W-240, 28, 14);
+  ctx.fill();
+
+  const grad2 = ctx.createLinearGradient(120, 0, W-120, 0);
+  grad2.addColorStop(0, '#c9a84c');
+  grad2.addColorStop(1, '#c0392b');
+  ctx.fillStyle = grad2;
+  roundRect(ctx, 120, barY2, (W-240)*yangPct, 28, 14);
+  ctx.fill();
+
+  // ── 하단 구분선 ──
+  const footY = H - 200;
+  ctx.strokeStyle = 'rgba(201,168,76,0.3)';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(80, footY); ctx.lineTo(W-80, footY); ctx.stroke();
+
+  // ── 하단 CTA ──
+  ctx.fillStyle = '#c9a84c';
+  ctx.font = 'bold 40px serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('나의 사주와 궁합을 확인해보세요', W/2, footY + 70);
+
+  ctx.fillStyle = 'rgba(245,240,232,0.5)';
+  ctx.font = '32px sans-serif';
+  ctx.fillText('링크를 열어 생년월일을 입력하세요 ✨', W/2, footY + 130);
+
+  // URL
+  ctx.fillStyle = 'rgba(201,168,76,0.7)';
+  ctx.font = '28px sans-serif';
+  const shortUrl = window.location.hostname;
+  ctx.fillText(shortUrl, W/2, footY + 185);
+
+  return canvas;
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x+r, y);
+  ctx.lineTo(x+w-r, y);
+  ctx.quadraticCurveTo(x+w, y, x+w, y+r);
+  ctx.lineTo(x+w, y+h-r);
+  ctx.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
+  ctx.lineTo(x+r, y+h);
+  ctx.quadraticCurveTo(x, y+h, x, y+h-r);
+  ctx.lineTo(x, y+r);
+  ctx.quadraticCurveTo(x, y, x+r, y);
+  ctx.closePath();
 }
 
 // ── URL 파라미터로 공유 링크 처리 ──
