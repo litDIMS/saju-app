@@ -345,6 +345,77 @@ nav {
   .pillar-stem { font-size:24px; }
   .pillar-branch { font-size:20px; }
 }
+
+/* ── 궁합 / 세운 공통 ── */
+.share-bar {
+  display:flex; gap:10px; margin-top:28px; flex-wrap:wrap; justify-content:center;
+}
+.share-btn {
+  display:flex; align-items:center; gap:8px;
+  padding:13px 22px; border-radius:12px; border:none;
+  font-family:'Noto Sans KR',sans-serif; font-size:13px; font-weight:500;
+  cursor:pointer; transition:all .2s; text-decoration:none;
+}
+.share-btn-kakao  { background:#FEE500; color:#191919; }
+.share-btn-copy   { background:var(--ink); color:var(--paper); }
+.share-btn-insta  { background:linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888); color:#fff; }
+.share-btn:hover  { transform:translateY(-2px); box-shadow:0 6px 20px rgba(0,0,0,.15); }
+.share-btn svg    { width:18px; height:18px; flex-shrink:0; }
+
+/* 궁합 화면 */
+#gunghap { padding:90px 40px 80px; max-width:880px; margin:0 auto; }
+.gunghap-profiles {
+  display:grid; grid-template-columns:1fr auto 1fr; gap:16px;
+  align-items:center; margin-bottom:28px;
+}
+.gunghap-profile-card {
+  background:rgba(255,255,255,.8); border:1px solid var(--border);
+  border-radius:16px; padding:20px; text-align:center;
+}
+.gunghap-profile-card h3 { font-family:'Noto Serif KR',serif; font-size:15px; font-weight:600; margin-bottom:6px; }
+.gunghap-profile-card .birth { font-size:12px; color:var(--muted); margin-bottom:12px; }
+.gunghap-vs {
+  font-family:'Noto Serif KR',serif; font-size:28px; font-weight:900;
+  color:var(--gold); text-align:center;
+}
+.score-ring {
+  width:90px; height:90px; border-radius:50%; margin:0 auto 10px;
+  background:conic-gradient(var(--gold) calc(var(--pct)*1%), var(--paper-warm) 0);
+  display:flex; align-items:center; justify-content:center;
+  box-shadow:0 0 0 6px var(--paper);
+}
+.score-ring-inner {
+  width:68px; height:68px; border-radius:50%;
+  background:var(--paper); display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+}
+.score-num { font-family:'Noto Serif KR',serif; font-size:22px; font-weight:900; color:var(--ink); }
+.score-label { font-size:10px; color:var(--muted); }
+
+/* 세운 화면 */
+#sewoon { padding:90px 40px 80px; max-width:880px; margin:0 auto; }
+.sewoon-year-grid {
+  display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin-bottom:20px;
+}
+.sewoon-year-btn {
+  padding:10px 6px; border:1px solid var(--border); border-radius:10px;
+  background:var(--paper); font-family:'Noto Sans KR',sans-serif;
+  font-size:12px; cursor:pointer; transition:all .2s; text-align:center;
+}
+.sewoon-year-btn:hover { border-color:var(--gold); background:var(--gold-pale); }
+.sewoon-year-btn.active { background:var(--ink); color:var(--paper); border-color:var(--ink); }
+.sewoon-year-btn .year-num { font-weight:500; display:block; }
+.sewoon-year-btn .year-ganzhi { font-size:10px; color:var(--muted); display:block; margin-top:2px; }
+.sewoon-year-btn.active .year-ganzhi { color:rgba(255,255,255,.6); }
+
+@media(max-width:768px){
+  #gunghap,#sewoon { padding:80px 16px 60px; }
+  .gunghap-profiles { grid-template-columns:1fr; gap:10px; }
+  .gunghap-vs { display:none; }
+  .sewoon-year-grid { grid-template-columns:repeat(4,1fr); gap:8px; }
+  .share-bar { gap:8px; }
+  .share-btn { padding:11px 16px; font-size:12px; }
+}
 </style>
 </head>
 <body>
@@ -354,6 +425,8 @@ nav {
   <ul class="nav-links">
     <li><a class="active" onclick="showScreen('home')">사주보기</a></li>
     <li><a onclick="if(currentChart)showScreen('result')">결과</a></li>
+    <li><a onclick="if(currentChart)showScreen('sewoon')">세운</a></li>
+    <li><a onclick="if(currentChart)showScreen('gunghap')">궁합</a></li>
   </ul>
 </nav>
 
@@ -471,8 +544,202 @@ nav {
       <div class="daewoon-timeline" id="daewoon-timeline"></div>
     </div>
 
-    <div style="text-align:center;margin-top:32px;">
-      <button class="btn-main" style="max-width:240px;padding:14px 32px;" onclick="showScreen('home')">다시 입력하기</button>
+    <!-- 공유 & 이동 버튼 -->
+    <div class="share-bar">
+      <button class="share-btn share-btn-kakao" onclick="shareKakao()">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.477 3 2 6.477 2 10.8c0 2.7 1.6 5.1 4 6.6l-1 3.7 4.3-2.8c.9.1 1.8.2 2.7.2 5.523 0 10-3.477 10-7.7S17.523 3 12 3z"/></svg>
+        카카오톡 공유
+      </button>
+      <button class="share-btn share-btn-insta" onclick="shareInsta()">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+        인스타 스토리
+      </button>
+      <button class="share-btn share-btn-copy" onclick="copyShareLink()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
+        궁합 링크 복사
+      </button>
+    </div>
+    <div style="display:flex;gap:12px;justify-content:center;margin-top:12px;flex-wrap:wrap;">
+      <button class="share-btn" style="background:var(--gold-pale);color:var(--ink);" onclick="showScreen('sewoon')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        세운·년운 보기
+      </button>
+      <button class="share-btn" style="background:var(--gold-pale);color:var(--ink);" onclick="showScreen('gunghap')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+        궁합 보기
+      </button>
+      <button class="share-btn" style="background:var(--paper-warm);color:var(--ink);" onclick="showScreen('home')">
+        다시 입력하기
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ── 궁합 화면 ── -->
+<div id="gunghap" class="screen">
+  <div style="max-width:880px;margin:0 auto;padding:90px 40px 80px;">
+    <div class="result-header">
+      <div class="name-badge">❤ 궁합 분석</div>
+      <h1>두 사람의 인연을 봅니다</h1>
+      <p id="gunghap-sub">내 사주와 상대방의 사주를 비교합니다</p>
+    </div>
+
+    <!-- 두 프로필 -->
+    <div class="gunghap-profiles" id="gunghap-profiles">
+      <div class="gunghap-profile-card" id="my-profile">
+        <h3>나</h3>
+        <div class="birth" id="my-birth">—</div>
+        <div style="display:flex;justify-content:center;gap:6px;flex-wrap:wrap;" id="my-pillars"></div>
+      </div>
+      <div class="gunghap-vs">❤</div>
+      <div class="gunghap-profile-card" style="border:2px dashed var(--gold);">
+        <h3>상대방</h3>
+        <div class="birth">생년월일을 입력해주세요</div>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px;">
+          <div style="display:flex;gap:6px;">
+            <input type="number" id="g-year" placeholder="년도" style="width:70px;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--paper);text-align:center;">
+            <select id="g-month" style="flex:1;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:var(--paper);">
+              <option value="1">1월</option><option value="2">2월</option><option value="3">3월</option>
+              <option value="4">4월</option><option value="5">5월</option><option value="6">6월</option>
+              <option value="7">7월</option><option value="8">8월</option><option value="9">9월</option>
+              <option value="10">10월</option><option value="11">11월</option><option value="12">12월</option>
+            </select>
+            <input type="number" id="g-day" placeholder="일" style="width:50px;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--paper);text-align:center;">
+          </div>
+          <div style="display:flex;gap:6px;">
+            <select id="g-hour" style="flex:1;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:var(--paper);">
+              <option value="">시간 모름</option>
+              <option value="0">子時 23~01시</option><option value="2">丑時 01~03시</option>
+              <option value="4">寅時 03~05시</option><option value="6">卯時 05~07시</option>
+              <option value="8">辰時 07~09시</option><option value="10">巳時 09~11시</option>
+              <option value="12">午時 11~13시</option><option value="14">未時 13~15시</option>
+              <option value="16">申時 15~17시</option><option value="18">酉時 17~19시</option>
+              <option value="20">戌時 19~21시</option><option value="22">亥時 21~23시</option>
+            </select>
+            <div class="gender-toggle" style="flex:1;">
+              <button class="gender-btn selected" id="g-btn-male" onclick="selectGunghapGender('남')">남</button>
+              <button class="gender-btn" id="g-btn-female" onclick="selectGunghapGender('여')">여</button>
+            </div>
+          </div>
+          <button class="btn-main" style="padding:12px;" onclick="calcGunghap()">궁합 분석하기</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 궁합 결과 (처음엔 숨김) -->
+    <div id="gunghap-result" style="display:none;">
+      <!-- 점수 -->
+      <div class="section" style="text-align:center;margin-bottom:16px;">
+        <div class="section-title" style="justify-content:center;"><span class="dot"></span>종합 궁합 점수</div>
+        <div style="display:flex;justify-content:center;gap:32px;flex-wrap:wrap;margin-bottom:16px;">
+          <div>
+            <div class="score-ring" id="score-ring-total" style="--pct:75">
+              <div class="score-ring-inner">
+                <span class="score-num" id="score-total">75</span>
+                <span class="score-label">종합</span>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div class="score-ring" id="score-ring-love" style="--pct:80;background:conic-gradient(var(--fire) calc(var(--pct)*1%), var(--paper-warm) 0)">
+              <div class="score-ring-inner">
+                <span class="score-num" id="score-love">80</span>
+                <span class="score-label">연애</span>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div class="score-ring" id="score-ring-friend" style="--pct:70;background:conic-gradient(var(--water) calc(var(--pct)*1%), var(--paper-warm) 0)">
+              <div class="score-ring-inner">
+                <span class="score-num" id="score-friend">70</span>
+                <span class="score-label">우정</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI 궁합 해석 탭 -->
+      <div class="section">
+        <div class="section-title"><span class="dot"></span>궁합 상세 풀이 <span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:4px;">AI 풀이</span></div>
+        <div class="tab-row">
+          <button class="tab-btn active" onclick="switchGunghapTab('overall',this)">종합</button>
+          <button class="tab-btn" onclick="switchGunghapTab('love',this)">연애·결혼</button>
+          <button class="tab-btn" onclick="switchGunghapTab('work',this)">업무·우정</button>
+          <button class="tab-btn" onclick="switchGunghapTab('caution',this)">주의사항</button>
+        </div>
+        <div id="gtab-overall" class="interp-content active"></div>
+        <div id="gtab-love"    class="interp-content"></div>
+        <div id="gtab-work"    class="interp-content"></div>
+        <div id="gtab-caution" class="interp-content"></div>
+      </div>
+
+      <div class="share-bar">
+        <button class="share-btn share-btn-kakao" onclick="shareKakao()">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.477 3 2 6.477 2 10.8c0 2.7 1.6 5.1 4 6.6l-1 3.7 4.3-2.8c.9.1 1.8.2 2.7.2 5.523 0 10-3.477 10-7.7S17.523 3 12 3z"/></svg>
+          카카오톡으로 공유
+        </button>
+        <button class="share-btn share-btn-copy" onclick="copyShareLink()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
+          링크 복사
+        </button>
+      </div>
+    </div>
+
+    <div style="text-align:center;margin-top:20px;">
+      <button class="share-btn" style="background:var(--paper-warm);color:var(--ink);" onclick="showScreen('result')">← 내 사주로 돌아가기</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── 세운 화면 ── -->
+<div id="sewoon" class="screen">
+  <div style="max-width:880px;margin:0 auto;padding:90px 40px 80px;">
+    <div class="result-header">
+      <div class="name-badge">📅 세운 · 년운</div>
+      <h1>올해와 앞으로의 운세</h1>
+      <p id="sewoon-sub">연도를 선택하면 그 해의 운세를 풀이해드립니다</p>
+    </div>
+
+    <!-- 년도 선택 -->
+    <div class="section" style="margin-bottom:16px;">
+      <div class="section-title"><span class="dot"></span>년도 선택</div>
+      <div class="sewoon-year-grid" id="sewoon-year-grid"></div>
+    </div>
+
+    <!-- 선택된 년도 간지 -->
+    <div class="section" id="sewoon-ganzhi-section" style="display:none;margin-bottom:16px;">
+      <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
+        <div style="text-align:center;">
+          <div style="font-family:'Noto Serif KR',serif;font-size:48px;font-weight:900;color:var(--gold);" id="sw-cn">甲</div>
+          <div style="font-size:12px;color:var(--muted);" id="sw-kr">갑</div>
+        </div>
+        <div style="flex:1;min-width:200px;">
+          <div style="font-size:16px;font-weight:500;margin-bottom:4px;" id="sw-year-title">2024년 갑진년</div>
+          <div style="font-size:13px;color:var(--muted);line-height:1.6;" id="sw-year-desc">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI 세운 해석 탭 -->
+    <div class="section" id="sewoon-interp-section" style="display:none;">
+      <div class="section-title"><span class="dot"></span>세운 풀이 <span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:4px;">AI 풀이</span></div>
+      <div class="tab-row">
+        <button class="tab-btn active" onclick="switchSewoonTab('overall',this)">종합운</button>
+        <button class="tab-btn" onclick="switchSewoonTab('career',this)">직업·사업</button>
+        <button class="tab-btn" onclick="switchSewoonTab('love',this)">연애·결혼</button>
+        <button class="tab-btn" onclick="switchSewoonTab('wealth',this)">재물</button>
+        <button class="tab-btn" onclick="switchSewoonTab('health',this)">건강</button>
+      </div>
+      <div id="swtab-overall" class="interp-content active"></div>
+      <div id="swtab-career"  class="interp-content"></div>
+      <div id="swtab-love"    class="interp-content"></div>
+      <div id="swtab-wealth"  class="interp-content"></div>
+      <div id="swtab-health"  class="interp-content"></div>
+    </div>
+
+    <div style="text-align:center;margin-top:20px;">
+      <button class="share-btn" style="background:var(--paper-warm);color:var(--ink);" onclick="showScreen('result')">← 내 사주로 돌아가기</button>
     </div>
   </div>
 </div>
@@ -750,6 +1017,8 @@ function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   window.scrollTo(0,0);
+  if (id==='gunghap') updateGunghapMyProfile();
+  if (id==='sewoon')  initSewoon();
 }
 
 function startCalc() {
@@ -1174,16 +1443,472 @@ function appendKeywords(category, text, container) {
 
 
 function switchTab(name, btn) {
-  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-  document.querySelectorAll('.interp-content').forEach(c=>c.classList.remove('active'));
+  document.querySelectorAll('#result .tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('#result .interp-content').forEach(c=>c.classList.remove('active'));
   btn.classList.add('active');
   document.getElementById('tab-'+name).classList.add('active');
+  if (!tabCache[name]) loadTabInterpretation(name);
+}
 
-  // 탭 첫 방문 시 로드
-  if (!tabCache[name]) {
-    loadTabInterpretation(name);
+// ══════════════════════════════════════════════════════════════
+// 궁합 / 세운 / 공유 로직
+// ══════════════════════════════════════════════════════════════
+
+let gunghapGender = '여';
+let gunghapTabCache = {};
+let sewoonTabCache = {};
+let currentSewoonYear = null;
+
+// ── 공유 링크 생성 ──
+function buildShareUrl() {
+  if (!currentChart) return window.location.href;
+  const d = currentChart;
+  const params = new URLSearchParams({
+    y: d.year, m: d.month, d: d.day,
+    h: d.hour !== null ? d.hour : '',
+    g: d.gender,
+    n: d.name || '',
+  });
+  return window.location.origin + window.location.pathname + '?' + params.toString() + '#gunghap';
+}
+
+function copyShareLink() {
+  const url = buildShareUrl();
+  navigator.clipboard.writeText(url).then(() => {
+    alert('링크가 복사됐어요!\n카카오톡, 인스타그램 등에 붙여넣기 해서 공유하세요 😊');
+  }).catch(() => {
+    prompt('아래 링크를 복사해서 공유하세요:', url);
+  });
+}
+
+function shareKakao() {
+  const url = buildShareUrl();
+  const text = `${currentChart.name || ''}의 사주 궁합을 확인해보세요! 생년월일을 입력하면 우리 궁합을 볼 수 있어요 ❤`;
+  // 카카오 SDK 없이 공유 URL 방식
+  const kakaoUrl = `https://sharer.kakao.com/talk/friends/picker/link?app_key=&link_ver=4.0&template_id=&url=${encodeURIComponent(url)}`;
+  // 링크 복사 방식으로 폴백
+  copyShareLink();
+}
+
+function shareInsta() {
+  // 인스타는 직접 URL 공유가 안 되므로 링크 복사 후 안내
+  copyShareLink();
+  setTimeout(() => {
+    alert('링크를 복사했어요!\n인스타그램 스토리 → 링크 스티커에 붙여넣기 하세요 📸');
+  }, 300);
+}
+
+// ── URL 파라미터로 공유 링크 처리 ──
+function checkShareParams() {
+  const params = new URLSearchParams(window.location.search);
+  if (!params.get('y')) return;
+
+  const year  = parseInt(params.get('y'));
+  const month = parseInt(params.get('m'));
+  const day   = parseInt(params.get('d'));
+  const hour  = params.get('h') !== '' ? parseInt(params.get('h')) : null;
+  const gender= params.get('g') || '남';
+  const name  = params.get('n') || '';
+
+  // 입력 폼에 값 채우기
+  document.getElementById('birth-year').value  = year;
+  document.getElementById('birth-month').value = month;
+  document.getElementById('birth-day').value   = day;
+  if (hour !== null) document.getElementById('birth-hour').value = hour;
+  document.getElementById('user-name').value   = name;
+  selectGender(gender);
+
+  // 자동 계산 후 궁합 화면으로
+  setTimeout(() => {
+    startCalcSilent(year, month, day, hour, gender, name, () => {
+      showScreen('gunghap');
+      updateGunghapMyProfile();
+    });
+  }, 300);
+}
+
+function startCalcSilent(year, month, day, hour, gender, name, cb) {
+  try {
+    const yp = calcYearPillar(year, month, day);
+    const mp = calcMonthPillar(year, month, day);
+    const dp = calcDayPillar(year, month, day);
+    const hp = hour !== null ? calcHourPillar(dp, hour) : null;
+    const pillars = [yp, mp, dp, hp].filter(Boolean);
+    const elCounts = countElements(pillars);
+    const yyCounts = countYinYang(pillars);
+    const daewoons = calcDaewoon(yp, mp, gender, year, month, day);
+    currentChart = { year, month, day, hour, name, gender, yp, mp, dp, hp, elCounts, yyCounts, daewoons };
+    tabCache = {};
+    renderResult(currentChart);
+    if (cb) cb();
+  } catch(e) { console.error(e); }
+}
+
+// ── 궁합 ──
+function selectGunghapGender(g) {
+  gunghapGender = g;
+  document.getElementById('g-btn-male').classList.toggle('selected', g==='남');
+  document.getElementById('g-btn-female').classList.toggle('selected', g==='여');
+}
+
+function updateGunghapMyProfile() {
+  if (!currentChart) return;
+  const c = currentChart;
+  document.getElementById('my-birth').textContent =
+    `${c.year}년 ${c.month}월 ${c.day}일 ${c.gender}`;
+  document.getElementById('my-pillars').innerHTML =
+    [c.yp, c.mp, c.dp, c.hp].filter(Boolean).map(p =>
+      `<span style="font-family:'Noto Serif KR',serif;font-size:18px;font-weight:900;color:${p.stem.color};">${p.stem.cn}${p.branch.cn}</span>`
+    ).join('<span style="color:var(--muted);font-size:12px;"> · </span>');
+}
+
+function calcGunghap() {
+  const year  = parseInt(document.getElementById('g-year').value);
+  const month = parseInt(document.getElementById('g-month').value);
+  const day   = parseInt(document.getElementById('g-day').value);
+  const hourV = document.getElementById('g-hour').value;
+  const hour  = hourV === '' ? null : parseInt(hourV);
+  if (!year || !month || !day) { alert('상대방 생년월일을 입력해주세요.'); return; }
+
+  const yp2 = calcYearPillar(year, month, day);
+  const mp2 = calcMonthPillar(year, month, day);
+  const dp2 = calcDayPillar(year, month, day);
+  const hp2 = hour !== null ? calcHourPillar(dp2, hour) : null;
+  const el2 = countElements([yp2, mp2, dp2, hp2].filter(Boolean));
+
+  // 오행 상생상극 점수 계산
+  const score = calcGunghapScore(currentChart, {yp:yp2,mp:mp2,dp:dp2,hp:hp2,elCounts:el2,gender:gunghapGender,year,month,day});
+
+  document.getElementById('score-total').textContent = score.total;
+  document.getElementById('score-love').textContent  = score.love;
+  document.getElementById('score-friend').textContent = score.friend;
+  document.getElementById('score-ring-total').style.setProperty('--pct', score.total);
+  document.getElementById('score-ring-love').style.cssText += `--pct:${score.love}`;
+  document.getElementById('score-ring-friend').style.cssText += `--pct:${score.friend}`;
+
+  document.getElementById('gunghap-result').style.display = 'block';
+  gunghapTabCache = {};
+
+  // AI 해석 로드
+  window._gunghapPartner = {yp:yp2,mp:mp2,dp:dp2,hp:hp2,elCounts:el2,gender:gunghapGender,year,month,day,score};
+  ['overall','love','work','caution'].forEach(t => {
+    document.getElementById('gtab-'+t).innerHTML = renderSkeletonLoading();
+  });
+  loadGunghapTab('overall');
+
+  document.getElementById('gunghap-result').scrollIntoView({behavior:'smooth'});
+}
+
+function calcGunghapScore(c1, c2) {
+  // 오행 상생상극 기반 궁합 점수
+  const gen = {목:'화',화:'토',토:'금',금:'수',수:'목'};
+  const ctrl = {목:'토',화:'금',토:'수',금:'목',수:'화'};
+  const d1 = c1.dp.stem.el, d2 = c2.dp.stem.el;
+
+  let base = 60;
+  if (gen[d1] === d2 || gen[d2] === d1) base += 18; // 상생
+  if (d1 === d2) base += 10; // 같은 오행
+  if (ctrl[d1] === d2 || ctrl[d2] === d1) base -= 10; // 상극
+
+  // 음양 조화
+  const yy1 = c1.dp.stem.yy, yy2 = c2.dp.stem.yy;
+  if (yy1 !== yy2) base += 8; // 음양 다르면 조화
+
+  const total   = Math.min(99, Math.max(40, base + Math.floor(Math.random()*8)));
+  const love    = Math.min(99, Math.max(40, base + 5 + Math.floor(Math.random()*8)));
+  const friend  = Math.min(99, Math.max(40, base - 3 + Math.floor(Math.random()*8)));
+  return { total, love, friend };
+}
+
+async function loadGunghapTab(tab) {
+  if (gunghapTabCache[tab]) return;
+  gunghapTabCache[tab] = true;
+
+  const el = document.getElementById('gtab-' + tab);
+  el.innerHTML = renderSkeletonLoading();
+
+  const p = window._gunghapPartner;
+  const c = currentChart;
+
+  const prompts = {
+    overall: `당신은 30년 경력의 사주명리 전문가입니다. 두 사람의 사주를 비교해서 궁합을 풀이해주세요.
+
+【사람 A (${c.name || '나'}】
+- 생년월일: ${c.year}년 ${c.month}월 ${c.day}일 / 성별: ${c.gender}
+- 사주: ${c.yp.stem.cn}${c.yp.branch.cn} ${c.mp.stem.cn}${c.mp.branch.cn} ${c.dp.stem.cn}${c.dp.branch.cn} ${c.hp?c.hp.stem.cn+c.hp.branch.cn:'시주미상'}
+- 일간: ${c.dp.stem.kr}(${c.dp.stem.el}) / 오행: 목${c.elCounts['목']} 화${c.elCounts['화']} 토${c.elCounts['토']} 금${c.elCounts['금']} 수${c.elCounts['수']}
+
+【사람 B (상대방)】
+- 생년월일: ${p.year}년 ${p.month}월 ${p.day}일 / 성별: ${p.gender}
+- 사주: ${p.yp.stem.cn}${p.yp.branch.cn} ${p.mp.stem.cn}${p.mp.branch.cn} ${p.dp.stem.cn}${p.dp.branch.cn} ${p.hp?p.hp.stem.cn+p.hp.branch.cn:'시주미상'}
+- 일간: ${p.dp.stem.kr}(${p.dp.stem.el}) / 오행: 목${p.elCounts['목']} 화${p.elCounts['화']} 토${p.elCounts['토']} 금${p.elCounts['금']} 수${p.elCounts['수']}
+
+종합 궁합 점수: ${p.score.total}점
+
+두 사람의 궁합을 다음 형식으로 자세하게 풀이해주세요:
+
+1. **두 사람의 오행 조화**
+   - 일간끼리의 상생상극 관계와 의미
+   - 서로 보완하는 점과 충돌하는 점
+   - 이 두 사람이 만났을 때 시너지가 나는 영역
+
+2. **두 사람이 함께할 때 나타나는 특징**
+   - 첫 만남에서 서로 느끼는 감정과 인상
+   - 시간이 지나면서 관계가 발전하는 방식
+   - 서로에게 미치는 긍정적인 영향
+
+3. **관계를 더 좋게 만드는 방법**
+   - 갈등이 생기는 전형적인 패턴
+   - 서로를 이해하고 배려하는 방법
+   - 함께하면 좋은 활동이나 상황
+
+각 섹션을 풍부하게, 읽는 사람이 공감할 수 있도록 구체적인 예시와 함께 작성해주세요. 전체 800자 이상으로 작성하세요.`,
+
+    love: `사주명리 전문가로서 두 사람의 연애·결혼 궁합을 풀이해주세요.
+
+A: ${c.dp.stem.kr}(${c.dp.stem.el}) 일간 / ${c.gender} / ${c.yp.stem.cn}${c.yp.branch.cn} ${c.mp.stem.cn}${c.mp.branch.cn} ${c.dp.stem.cn}${c.dp.branch.cn}
+B: ${p.dp.stem.kr}(${p.dp.stem.el}) 일간 / ${p.gender} / ${p.yp.stem.cn}${p.yp.branch.cn} ${p.mp.stem.cn}${p.mp.branch.cn} ${p.dp.stem.cn}${p.dp.branch.cn}
+
+1. **첫눈에 반하는 포인트** — 서로 어떤 점에 끌리는지
+2. **연애할 때 두 사람의 모습** — 구체적인 일상 장면 묘사
+3. **결혼 후 가정의 모습** — 역할 분담, 갈등 패턴, 극복 방법
+4. **이 커플의 최고의 순간** — 가장 행복한 시나리오
+
+800자 이상, 구체적인 상황 예시 포함해서 작성하세요.`,
+
+    work: `사주명리 전문가로서 두 사람의 업무·우정 궁합을 풀이해주세요.
+
+A: ${c.dp.stem.kr}(${c.dp.stem.el}) 일간 / ${c.yp.stem.cn}${c.yp.branch.cn} ${c.mp.stem.cn}${c.mp.branch.cn} ${c.dp.stem.cn}${c.dp.branch.cn}
+B: ${p.dp.stem.kr}(${p.dp.stem.el}) 일간 / ${p.yp.stem.cn}${p.yp.branch.cn} ${p.mp.stem.cn}${p.mp.branch.cn} ${p.dp.stem.cn}${p.dp.branch.cn}
+
+1. **함께 일할 때 시너지** — 서로 강점이 되는 역할
+2. **친구로서의 관계** — 우정의 특징과 깊이
+3. **함께하면 좋은 사업·프로젝트 유형**
+4. **갈등이 생기는 상황과 해결법**
+
+700자 이상으로 작성하세요.`,
+
+    caution: `사주명리 전문가로서 두 사람이 주의해야 할 점을 풀이해주세요.
+
+A: ${c.dp.stem.kr}(${c.dp.stem.el}) / ${c.yp.stem.cn}${c.yp.branch.cn} ${c.mp.stem.cn}${c.mp.branch.cn} ${c.dp.stem.cn}${c.dp.branch.cn}
+B: ${p.dp.stem.kr}(${p.dp.stem.el}) / ${p.yp.stem.cn}${p.yp.branch.cn} ${p.mp.stem.cn}${p.mp.branch.cn} ${p.dp.stem.cn}${p.dp.branch.cn}
+
+1. **관계에서 반복되는 갈등 패턴** — 구체적 상황 예시
+2. **서로 상처를 주기 쉬운 포인트** — 말투, 행동, 습관
+3. **위기를 극복하는 방법** — 실질적인 조언
+4. **이 관계가 오래가려면** — 핵심 조언 3가지
+
+600자 이상으로 작성하세요.`,
+  };
+
+  const textEl = document.createElement('div');
+  textEl.className = 'ai-interp-block';
+  textEl.innerHTML = '<div class="body-text" id="gai-'+tab+'"><span class="streaming-cursor"></span></div>';
+  el.innerHTML = '';
+  el.appendChild(textEl);
+  const bodyEl = document.getElementById('gai-'+tab);
+
+  let fullText = '';
+  try {
+    const res = await fetch('/api/saju', {
+      method:'POST', headers:{'content-type':'application/json'},
+      body: JSON.stringify({ model:'claude-sonnet-4-6', max_tokens:2000, stream:true, messages:[{role:'user',content:prompts[tab]}] })
+    });
+    const reader = res.body.getReader();
+    const dec = new TextDecoder();
+    let buf = '';
+    while(true){
+      const {done,value} = await reader.read();
+      if(done) break;
+      buf += dec.decode(value,{stream:true});
+      const lines = buf.split('\n'); buf = lines.pop()??'';
+      for(const line of lines){
+        const trimmed=line.trim();
+        if(!trimmed.startsWith('data:')) continue;
+        const raw=trimmed.slice(5).trim();
+        if(!raw||raw==='[DONE]') continue;
+        try{
+          const j=JSON.parse(raw);
+          let t='';
+          if(j.type==='content_block_delta'&&j.delta?.type==='text_delta') t=j.delta.text??'';
+          else if(j.delta?.text) t=j.delta.text;
+          if(t){ fullText+=t; bodyEl.innerHTML=formatAIText(fullText)+'<span class="streaming-cursor"></span>'; }
+        }catch(e){}
+      }
+    }
+    bodyEl.innerHTML = formatAIText(fullText||'분석을 불러오지 못했습니다.');
+    appendKeywords('g'+tab, fullText, el);
+  } catch(e) {
+    gunghapTabCache[tab]=false;
+    bodyEl.innerHTML='<span style="color:var(--muted);">⚠️ 해석을 불러오지 못했습니다. 다시 클릭해주세요.</span>';
   }
 }
+
+function switchGunghapTab(name, btn) {
+  document.querySelectorAll('#gunghap .tab-btn').forEach(b=>b.classList.remove('active'));
+  ['overall','love','work','caution'].forEach(t=>document.getElementById('gtab-'+t).classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('gtab-'+name).classList.add('active');
+  if (!gunghapTabCache[name]) loadGunghapTab(name);
+}
+
+// ── 세운 ──
+function initSewoon() {
+  if (!currentChart) return;
+  const currentYear = new Date().getFullYear();
+  const grid = document.getElementById('sewoon-year-grid');
+  grid.innerHTML = '';
+
+  // 현재 나이 기준 ±5년, 미래 10년
+  const startYear = currentYear - 2;
+  const endYear   = currentYear + 12;
+
+  for (let yr = startYear; yr <= endYear; yr++) {
+    const stemIdx   = ((yr - 4) % 10 + 10) % 10;
+    const branchIdx = ((yr - 4) % 12 + 12) % 12;
+    const stem   = STEMS[stemIdx];
+    const branch = BRANCHES[branchIdx];
+    const age = yr - currentChart.year;
+
+    const btn = document.createElement('button');
+    btn.className = 'sewoon-year-btn' + (yr === currentYear ? ' active' : '');
+    btn.innerHTML = `<span class="year-num">${yr}년</span><span class="year-ganzhi">${stem.cn}${branch.cn} (${age}세)</span>`;
+    btn.onclick = () => selectSewoonYear(yr, stem, branch, btn);
+    grid.appendChild(btn);
+  }
+
+  // 현재 년도 자동 선택
+  const currentBtn = grid.querySelector('.active');
+  if (currentBtn) {
+    const stemIdx   = ((currentYear - 4) % 10 + 10) % 10;
+    const branchIdx = ((currentYear - 4) % 12 + 12) % 12;
+    selectSewoonYear(currentYear, STEMS[stemIdx], BRANCHES[branchIdx], currentBtn);
+  }
+}
+
+function selectSewoonYear(year, stem, branch, btn) {
+  document.querySelectorAll('.sewoon-year-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  currentSewoonYear = year;
+  sewoonTabCache = {};
+
+  document.getElementById('sw-cn').textContent = stem.cn + branch.cn;
+  document.getElementById('sw-cn').style.color = stem.color;
+  document.getElementById('sw-kr').textContent = stem.kr + branch.kr + '년 (' + stem.el + branch.el + ')';
+  document.getElementById('sw-year-title').textContent = year + '년 ' + stem.kr + branch.kr + '년';
+  document.getElementById('sw-year-desc').textContent =
+    stem.el + '의 기운이 ' + branch.el + '을 만나는 해. ' + stem.kr + branch.kr + '의 기운이 원국과 어떻게 작용하는지 살펴봅니다.';
+
+  document.getElementById('sewoon-ganzhi-section').style.display = 'block';
+  document.getElementById('sewoon-interp-section').style.display = 'block';
+
+  ['overall','career','love','wealth','health'].forEach(t => {
+    document.getElementById('swtab-'+t).innerHTML = renderSkeletonLoading();
+  });
+  loadSewoonTab('overall', year, stem, branch);
+}
+
+async function loadSewoonTab(tab, year, stem, branch) {
+  if (sewoonTabCache[tab]) return;
+  sewoonTabCache[tab] = true;
+
+  const el = document.getElementById('swtab-' + tab);
+  const c = currentChart;
+  const age = year - c.year;
+
+  const baseCtx = `
+【원국 정보】
+생년월일: ${c.year}년 ${c.month}월 ${c.day}일 / 성별: ${c.gender}
+사주원국: ${c.yp.stem.cn}${c.yp.branch.cn} ${c.mp.stem.cn}${c.mp.branch.cn} ${c.dp.stem.cn}${c.dp.branch.cn} ${c.hp?c.hp.stem.cn+c.hp.branch.cn:'시주미상'}
+일간: ${c.dp.stem.kr}(${c.dp.stem.el}) 오행분포: 목${c.elCounts['목']} 화${c.elCounts['화']} 토${c.elCounts['토']} 금${c.elCounts['금']} 수${c.elCounts['수']}
+
+【세운 정보】
+${year}년 (${age}세) — ${stem.cn}${branch.cn}(${stem.kr}${branch.kr}) — ${stem.el}·${branch.el}`;
+
+  const prompts = {
+    overall: `사주명리 전문가로서 이 사람의 ${year}년 세운을 풀이해주세요.
+${baseCtx}
+
+1. **${year}년의 전반적인 기운** — 세운 천간지지가 원국에 미치는 영향
+2. **이 해의 키워드와 테마** — 어떤 일들이 일어나기 쉬운가
+3. **상반기(1~6월)와 하반기(7~12월)의 흐름 차이**
+4. **이 해를 잘 보내는 방법** — 해야 할 것과 하지 말아야 할 것
+
+800자 이상, 구체적인 상황 예시 포함해서 작성하세요.`,
+
+    career: `사주명리 전문가로서 ${year}년 직업·사업운을 풀이해주세요.
+${baseCtx}
+직업운, 승진, 이직, 사업 등 사회적 활동에 관한 세운 풀이를 구체적 예시와 함께 700자 이상 작성하세요.`,
+
+    love: `사주명리 전문가로서 ${year}년 연애·결혼운을 풀이해주세요.
+${baseCtx}
+연애운, 결혼운, 이성관계, 기존 관계의 변화 등을 구체적 예시와 함께 700자 이상 작성하세요.`,
+
+    wealth: `사주명리 전문가로서 ${year}년 재물운을 풀이해주세요.
+${baseCtx}
+수입, 투자, 지출, 재물의 흐름을 구체적 예시와 함께 600자 이상 작성하세요.`,
+
+    health: `사주명리 전문가로서 ${year}년 건강운을 풀이해주세요.
+${baseCtx}
+주의해야 할 신체 부위, 건강 관리법, 정신 건강을 구체적 예시와 함께 600자 이상 작성하세요.`,
+  };
+
+  const textEl = document.createElement('div');
+  textEl.className = 'ai-interp-block';
+  textEl.innerHTML = '<div class="body-text" id="swai-'+tab+'"><span class="streaming-cursor"></span></div>';
+  el.innerHTML = '';
+  el.appendChild(textEl);
+  const bodyEl = document.getElementById('swai-'+tab);
+
+  let fullText = '';
+  try {
+    const res = await fetch('/api/saju', {
+      method:'POST', headers:{'content-type':'application/json'},
+      body: JSON.stringify({ model:'claude-sonnet-4-6', max_tokens:2000, stream:true, messages:[{role:'user',content:prompts[tab]}] })
+    });
+    const reader = res.body.getReader();
+    const dec = new TextDecoder();
+    let buf = '';
+    while(true){
+      const {done,value}=await reader.read();
+      if(done) break;
+      buf+=dec.decode(value,{stream:true});
+      const lines=buf.split('\n'); buf=lines.pop()??'';
+      for(const line of lines){
+        const trimmed=line.trim();
+        if(!trimmed.startsWith('data:')) continue;
+        const raw=trimmed.slice(5).trim();
+        if(!raw||raw==='[DONE]') continue;
+        try{
+          const j=JSON.parse(raw);
+          let t='';
+          if(j.type==='content_block_delta'&&j.delta?.type==='text_delta') t=j.delta.text??'';
+          else if(j.delta?.text) t=j.delta.text;
+          if(t){ fullText+=t; bodyEl.innerHTML=formatAIText(fullText)+'<span class="streaming-cursor"></span>'; }
+        }catch(e){}
+      }
+    }
+    bodyEl.innerHTML=formatAIText(fullText||'분석을 불러오지 못했습니다.');
+    appendKeywords('sw'+tab, fullText, el);
+  } catch(e){
+    sewoonTabCache[tab]=false;
+    bodyEl.innerHTML='<span style="color:var(--muted);">⚠️ 해석을 불러오지 못했습니다. 다시 클릭해주세요.</span>';
+  }
+}
+
+function switchSewoonTab(name, btn) {
+  document.querySelectorAll('#sewoon .tab-btn').forEach(b=>b.classList.remove('active'));
+  ['overall','career','love','wealth','health'].forEach(t=>document.getElementById('swtab-'+t).classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('swtab-'+name).classList.add('active');
+  if (!sewoonTabCache[name] && currentSewoonYear) {
+    const stemIdx   = ((currentSewoonYear-4)%10+10)%10;
+    const branchIdx = ((currentSewoonYear-4)%12+12)%12;
+    loadSewoonTab(name, currentSewoonYear, STEMS[stemIdx], BRANCHES[branchIdx]);
+  }
+}
+
 </script>
+<script>window.addEventListener("load",checkShareParams);</script>
 </body>
 </html>
