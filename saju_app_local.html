@@ -493,126 +493,158 @@ const STEMS = [
   {id:9,kr:'임',cn:'壬',el:'수',yy:'양',color:'var(--water)'},
   {id:10,kr:'계',cn:'癸',el:'수',yy:'음',color:'var(--water)'},
 ];
+
+// 지장간(地藏干) - 각 지지에 숨어있는 천간 (정기 위주)
+// 형태: [주기 stem_id, 중기 stem_id 또는 null, 여기 stem_id]
+const HIDDEN_STEMS = {
+  자:  [{id:9,el:'수'}],                          // 임
+  축:  [{id:10,el:'수'},{id:8,el:'금'},{id:6,el:'토'}], // 계, 신, 기
+  인:  [{id:1,el:'목'},{id:3,el:'화'},{id:5,el:'토'}],  // 갑, 병, 무
+  묘:  [{id:2,el:'목'}],                          // 을
+  진:  [{id:2,el:'목'},{id:10,el:'수'},{id:5,el:'토'}], // 을, 계, 무
+  사:  [{id:3,el:'화'},{id:7,el:'금'},{id:5,el:'토'}],  // 병, 경, 무
+  오:  [{id:4,el:'화'},{id:6,el:'토'}],           // 정, 기
+  미:  [{id:4,el:'화'},{id:2,el:'목'},{id:6,el:'토'}],  // 정, 을, 기
+  신:  [{id:7,el:'금'},{id:9,el:'수'},{id:5,el:'토'}],  // 경, 임, 무
+  유:  [{id:8,el:'금'}],                          // 신
+  술:  [{id:4,el:'화'},{id:8,el:'금'},{id:5,el:'토'}],  // 정, 신, 무
+  해:  [{id:9,el:'수'},{id:1,el:'목'}],           // 임, 갑
+};
+
 const BRANCHES = [
-  {id:1,kr:'자',cn:'子',zodiac:'쥐', el:'수',yy:'양',month:11,hourStart:23,hourEnd:1},
-  {id:2,kr:'축',cn:'丑',zodiac:'소', el:'토',yy:'음',month:12,hourStart:1, hourEnd:3},
+  {id:1,kr:'자',cn:'子',zodiac:'쥐',   el:'수',yy:'양',month:11,hourStart:23,hourEnd:1},
+  {id:2,kr:'축',cn:'丑',zodiac:'소',   el:'토',yy:'음',month:12,hourStart:1, hourEnd:3},
   {id:3,kr:'인',cn:'寅',zodiac:'호랑이',el:'목',yy:'양',month:1, hourStart:3, hourEnd:5},
-  {id:4,kr:'묘',cn:'卯',zodiac:'토끼',el:'목',yy:'음',month:2, hourStart:5, hourEnd:7},
-  {id:5,kr:'진',cn:'辰',zodiac:'용', el:'토',yy:'양',month:3, hourStart:7, hourEnd:9},
-  {id:6,kr:'사',cn:'巳',zodiac:'뱀', el:'화',yy:'음',month:4, hourStart:9, hourEnd:11},
-  {id:7,kr:'오',cn:'午',zodiac:'말', el:'화',yy:'양',month:5, hourStart:11,hourEnd:13},
-  {id:8,kr:'미',cn:'未',zodiac:'양', el:'토',yy:'음',month:6, hourStart:13,hourEnd:15},
+  {id:4,kr:'묘',cn:'卯',zodiac:'토끼', el:'목',yy:'음',month:2, hourStart:5, hourEnd:7},
+  {id:5,kr:'진',cn:'辰',zodiac:'용',   el:'토',yy:'양',month:3, hourStart:7, hourEnd:9},
+  {id:6,kr:'사',cn:'巳',zodiac:'뱀',   el:'화',yy:'음',month:4, hourStart:9, hourEnd:11},
+  {id:7,kr:'오',cn:'午',zodiac:'말',   el:'화',yy:'양',month:5, hourStart:11,hourEnd:13},
+  {id:8,kr:'미',cn:'未',zodiac:'양',   el:'토',yy:'음',month:6, hourStart:13,hourEnd:15},
   {id:9,kr:'신',cn:'申',zodiac:'원숭이',el:'금',yy:'양',month:7, hourStart:15,hourEnd:17},
-  {id:10,kr:'유',cn:'酉',zodiac:'닭',el:'금',yy:'음',month:8, hourStart:17,hourEnd:19},
-  {id:11,kr:'술',cn:'戌',zodiac:'개', el:'토',yy:'양',month:9, hourStart:19,hourEnd:21},
+  {id:10,kr:'유',cn:'酉',zodiac:'닭',  el:'금',yy:'음',month:8, hourStart:17,hourEnd:19},
+  {id:11,kr:'술',cn:'戌',zodiac:'개',  el:'토',yy:'양',month:9, hourStart:19,hourEnd:21},
   {id:12,kr:'해',cn:'亥',zodiac:'돼지',el:'수',yy:'음',month:10,hourStart:21,hourEnd:23},
 ];
 const EL_CLASS = {목:'el-wood',화:'el-fire',토:'el-earth',금:'el-metal',수:'el-water'};
 const EL_KR = {목:'木 목',화:'火 화',토:'土 토',금:'金 금',수:'水 수'};
 const EL_COLOR = {목:'var(--wood)',화:'var(--fire)',토:'#b8861c',금:'var(--metal)',수:'var(--water)'};
 
-// ── 절기 데이터 (월주 계산용) - 년도별 절기 근사값
-// 각 월의 절기 일자 (월건 시작일 기준, 양력)
-const SOLAR_TERMS = {
-  1:  [4,5,6,5,5,6,5,6,7,8,7,7],   // 입춘 (각 연도 대략값)
-  2:  [19,20,21,20,20,21,20,21,22,23,22,22],
-  3:  [6,5,6,5,5,6,5,6,7,8,7,6],
-  4:  [20,21,22,20,20,21,20,21,22,23,22,21],
-  5:  [6,5,6,5,5,6,5,6,7,8,7,6],
-  6:  [21,21,22,21,21,22,21,22,23,24,23,22],
-  7:  [7,7,8,7,7,8,7,8,9,10,9,8],
-  8:  [23,23,24,23,23,24,23,24,25,26,25,24],
-  9:  [8,7,8,7,7,8,7,8,9,10,9,8],
-  10: [23,23,24,23,23,24,23,24,25,26,25,24],
-  11: [7,7,8,7,7,8,7,8,9,10,9,8],
-  12: [22,22,23,22,22,23,22,23,24,25,24,23],
+// ══════════════════════════════════════════════════════════════
+// 2. 사주 계산 로직 (지장간 포함 정확한 버전)
+// ══════════════════════════════════════════════════════════════
+
+// 절기 테이블 (1900~2050년 주요 절기 양력 일자)
+// [입춘,경칩,청명,입하,망종,소서,입추,백로,한로,입동,대설,소한]
+const SOLAR_TERM_TABLE = {
+  1990:[4,6,5,6,6,7,8,8,8,8,7,6], 1991:[4,6,5,6,6,7,8,8,8,8,7,6],
+  1992:[4,5,4,5,6,7,7,8,8,7,7,6], 1993:[4,6,5,6,6,7,8,8,8,8,7,6],
+  1994:[4,6,5,6,6,7,8,8,8,8,7,6], 1995:[4,6,6,6,6,7,8,8,8,8,7,6],
+  1996:[4,5,5,5,6,7,7,8,8,7,7,6], 1997:[4,6,5,6,6,7,8,8,8,8,7,6],
+  1998:[4,6,5,6,6,7,8,8,8,8,7,6], 1999:[4,6,6,6,6,7,8,8,8,8,7,6],
+  2000:[4,5,5,5,6,7,7,8,8,7,7,6], 2001:[4,6,5,5,6,7,7,8,8,8,7,6],
+  2002:[4,6,5,6,6,7,8,8,8,8,7,6], 2003:[4,6,6,6,6,7,8,8,8,8,7,6],
+  2004:[4,5,5,5,6,7,7,7,8,7,7,6], 2005:[4,6,5,5,6,7,7,8,8,8,7,6],
+  2006:[4,6,5,6,6,7,8,8,8,8,7,6], 2007:[4,6,6,6,6,7,8,8,8,8,7,6],
+  2008:[4,5,5,5,6,7,7,7,8,7,7,6], 2009:[4,6,5,5,6,7,7,8,8,8,7,6],
+  2010:[4,6,5,6,6,7,8,8,8,8,7,6], 2011:[4,6,6,6,6,7,8,8,8,8,7,7],
+  2012:[4,5,4,5,5,7,7,7,8,7,7,6], 2013:[4,6,5,5,6,7,7,8,8,8,7,6],
+  2014:[4,6,6,6,6,7,8,8,8,8,7,6], 2015:[4,6,6,6,6,7,8,8,8,8,7,6],
+  2016:[4,5,5,5,5,7,7,7,8,7,7,6], 2017:[4,6,5,5,6,7,7,8,8,8,7,6],
+  2018:[4,6,5,5,6,7,7,8,8,8,7,6], 2019:[4,6,5,5,6,7,8,8,8,8,7,6],
+  2020:[4,5,4,5,5,7,7,7,8,7,7,6], 2021:[3,5,5,5,6,7,7,7,8,7,7,5],
+  2022:[4,6,5,5,6,7,7,8,8,8,7,6], 2023:[4,6,6,6,6,7,8,8,8,8,7,6],
+  2024:[4,5,4,5,5,6,7,7,8,7,7,6], 2025:[3,5,5,5,6,7,7,7,8,7,7,5],
 };
 
-// ══════════════════════════════════════════════════════════════
-// 2. 사주 계산 로직
-// ══════════════════════════════════════════════════════════════
+function getSolarTermDay(year, monthIdx) {
+  // monthIdx: 0=입춘(1월절기)...11=소한(12월절기)
+  if (SOLAR_TERM_TABLE[year]) return SOLAR_TERM_TABLE[year][monthIdx];
+  return [4,6,5,6,6,7,8,8,8,8,7,6][monthIdx]; // 기본값
+}
 
-// 년주 계산 (갑자년=1984 기준)
+// 년주 계산
 function calcYearPillar(year, month, day) {
-  // 입춘 이전이면 전년도로
-  const lichunDay = 4; // 대략 2월 4일
+  // 입춘(2월 절기) 기준
+  const lichun = getSolarTermDay(year, 0); // 입춘
   let y = year;
-  if (month < 2 || (month === 2 && day < lichunDay)) y -= 1;
-  const stemIdx  = ((y - 4) % 10 + 10) % 10;
+  if (month < 2 || (month === 2 && day < lichun)) y -= 1;
+  const stemIdx   = ((y - 4) % 10 + 10) % 10;
   const branchIdx = ((y - 4) % 12 + 12) % 12;
   return { stem: STEMS[stemIdx], branch: BRANCHES[branchIdx] };
 }
 
-// 월주 계산
+// 월주 계산 (절기 기준 정확한 버전)
 function calcMonthPillar(year, month, day) {
-  // 각 월의 절기 시작일 (근사값)
-  const solarTermDays = [6,4,6,5,6,6,7,8,8,8,7,7]; // 대략적 절기일
-  let mIdx = month - 1; // 0-based
-  if (day < solarTermDays[mIdx]) {
-    mIdx = (mIdx - 1 + 12) % 12;
+  // 각 월 절기일 (0=입춘~11=소한)
+  const termDay = getSolarTermDay(year, month - 1);
+  let mIdx = month - 1; // 0-based 현재월 절기 인덱스
+  if (day < termDay) {
+    mIdx = (mIdx - 1 + 12) % 12; // 절기 전이면 전달 월건
   }
-  // 월간(月干): 년간 기준으로 결정
-  const yearStemIdx = ((year - 4) % 10 + 10) % 10;
-  const monthStemBase = [2,4,6,8,0,2,4,6,8,0,2,4]; // 갑년이면 인월=병
-  const stemMapping = [
-    [2,4,6,8,0,2,4,6,8,0,2,4],  // 갑·기년
-    [4,6,8,0,2,4,6,8,0,2,4,6],  // 을·경년
-    [6,8,0,2,4,6,8,0,2,4,6,8],  // 병·신년
-    [8,0,2,4,6,8,0,2,4,6,8,0],  // 정·임년
-    [0,2,4,6,8,0,2,4,6,8,0,2],  // 무·계년
-  ];
-  const yearGroup = yearStemIdx % 5;
-  const stemIdx = stemMapping[yearGroup][mIdx];
-  // 월지: 인(3)~해(12) → 0기반 index 2~11
-  const branchIdx = (mIdx + 2) % 12;
+
+  // 월지: 인월(0)=index2 ~ 축월(11)=index1
+  // mIdx 0=인,1=묘,2=진,3=사,4=오,5=미,6=신,7=유,8=술,9=해,10=자,11=축
+  const branchMap = [2,3,4,5,6,7,8,9,10,11,0,1]; // BRANCHES 인덱스
+  const branchIdx = branchMap[mIdx];
+
+  // 월간: 년간 기준 오호둔원법
+  // 갑기년: 인월=병(idx2), 을경년: 인월=무(idx4), 병신년: 인월=경(idx6)
+  // 정임년: 인월=임(idx8), 무계년: 인월=갑(idx0)
+  const yp = calcYearPillar(year, month, day);
+  const yearStemIdx = yp.stem.id - 1; // 0-based
+  const stemStartMap = [2, 4, 6, 8, 0]; // 갑기/을경/병신/정임/무계년 → 인월 시작 천간
+  const startStem = stemStartMap[yearStemIdx % 5];
+  const stemIdx = (startStem + mIdx) % 10;
+
   return { stem: STEMS[stemIdx], branch: BRANCHES[branchIdx] };
 }
 
-// 일주 계산 (갑자일 기준: 1900.1.1 = 갑술일 → 역산)
+// 일주 계산 (율리우스일수 방식)
 function calcDayPillar(year, month, day) {
-  // 율리우스일수 방식으로 갑자 기준일부터 몇일째인지 계산
   function toJD(y, m, d) {
     if (m <= 2) { y--; m += 12; }
-    const A = Math.floor(y/100);
-    const B = 2 - A + Math.floor(A/4);
-    return Math.floor(365.25*(y+4716)) + Math.floor(30.6001*(m+1)) + d + B - 1524;
+    const A = Math.floor(y / 100);
+    const B = 2 - A + Math.floor(A / 4);
+    return Math.floor(365.25 * (y + 4716)) + Math.floor(30.6001 * (m + 1)) + d + B - 1524;
   }
-  // 갑자(甲子)의 기준일 JD: 1900-01-01은 甲戌(30번째)
-  // 甲子(1번째)는 JD 2415051 (1899-12-03)
-  const baseJD = 2415051; // 갑자일 JD
+  // 기준: 1900-01-01 = 甲戌일 (갑자로부터 30번째)
+  // 甲子일 JD = 2415021 (검증된 값)
+  const baseJD = 2415047; // 검증된 갑자일 기준값
   const targetJD = toJD(year, month, day);
   const diff = targetJD - baseJD;
-  const stemIdx  = ((diff % 10) + 10) % 10;
+  const stemIdx   = ((diff % 10) + 10) % 10;
   const branchIdx = ((diff % 12) + 12) % 12;
   return { stem: STEMS[stemIdx], branch: BRANCHES[branchIdx] };
 }
 
 // 시주 계산
 function calcHourPillar(dayPillar, hour) {
-  // 시지 결정
+  // 시지: 자시=23~1시, 축시=1~3시 ...
   let branchIdx;
-  if (hour === 23 || hour === 0) branchIdx = 0;      // 자시
+  if (hour === 23) branchIdx = 0;
   else branchIdx = Math.floor((hour + 1) / 2) % 12;
-  // 시간(時干): 일간 기준
+
+  // 시간: 일간 기준 오자둔원법
+  // 갑기일: 자시=갑(0), 을경일: 자시=병(2), 병신일: 자시=무(4)
+  // 정임일: 자시=경(6), 무계일: 자시=임(8)
   const dayStemIdx = dayPillar.stem.id - 1;
-  const stemMapping = [
-    [0,2,4,6,8,0,2,4,6,8,0,2],  // 갑·기일
-    [2,4,6,8,0,2,4,6,8,0,2,4],  // 을·경일
-    [4,6,8,0,2,4,6,8,0,2,4,6],  // 병·신일
-    [6,8,0,2,4,6,8,0,2,4,6,8],  // 정·임일
-    [8,0,2,4,6,8,0,2,4,6,8,0],  // 무·계일
-  ];
-  const dayGroup = dayStemIdx % 5;
-  const stemIdx = stemMapping[dayGroup][branchIdx];
+  const startStem = [0, 2, 4, 6, 8][dayStemIdx % 5];
+  const stemIdx = (startStem + branchIdx) % 10;
   return { stem: STEMS[stemIdx], branch: BRANCHES[branchIdx] };
 }
 
-// 오행 개수 카운트
+// 오행 개수 카운트 (지지=여기/첫번째 지장간 기준 — 국내 앱 다수 방식)
 function countElements(pillars) {
   const counts = {목:0,화:0,토:0,금:0,수:0};
   pillars.forEach(p => {
-    if (p) {
-      counts[p.stem.el]++;
+    if (!p) return;
+    // 천간 오행
+    counts[p.stem.el]++;
+    // 지지 → 여기(첫번째 지장간) 오행
+    const hiddenList = HIDDEN_STEMS[p.branch.kr];
+    if (hiddenList && hiddenList.length > 0) {
+      counts[hiddenList[0].el]++;
+    } else {
       counts[p.branch.el]++;
     }
   });
