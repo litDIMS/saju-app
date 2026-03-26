@@ -1,0 +1,13 @@
+{
+  "name": "saju-app",
+  "version": "1.0.0",
+  "description": "사주명리 앱",
+  "main": "saju_server.js",
+  "scripts": {
+    "start": "node saju_server.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {}
+}
