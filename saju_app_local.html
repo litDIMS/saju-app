@@ -416,6 +416,35 @@ nav {
   .share-bar { gap:8px; }
   .share-btn { padding:11px 16px; font-size:12px; }
 }
+
+/* ── AI 로딩 애니메이션 ── */
+.ai-loading-wrap {
+  display:flex; flex-direction:column; align-items:center;
+  justify-content:center; padding:48px 20px; gap:20px;
+}
+.ai-loading-symbol {
+  font-family:'Noto Serif KR',serif; font-size:44px; font-weight:900;
+  color:var(--gold); animation:spinSlow 3s linear infinite;
+}
+@keyframes spinSlow { from{transform:rotate(0deg);} to{transform:rotate(360deg);} }
+.ai-loading-dots { display:flex; gap:8px; }
+.ai-loading-dots span {
+  width:8px; height:8px; border-radius:50%; background:var(--gold); opacity:.3;
+  animation:dotPulse 1.2s ease-in-out infinite;
+}
+.ai-loading-dots span:nth-child(2) { animation-delay:.2s; }
+.ai-loading-dots span:nth-child(3) { animation-delay:.4s; }
+@keyframes dotPulse { 0%,100%{opacity:.3;transform:scale(1);} 50%{opacity:1;transform:scale(1.3);} }
+.ai-loading-text { font-size:13px; color:var(--muted); letter-spacing:.05em; }
+
+/* 해석 결과 등장 애니메이션 */
+.ai-reveal {
+  animation: revealUp .5s cubic-bezier(.22,1,.36,1) both;
+}
+@keyframes revealUp {
+  from { opacity:0; transform:translateY(16px); }
+  to   { opacity:1; transform:translateY(0); }
+}
 </style>
 </head>
 <body>
@@ -1344,64 +1373,22 @@ async function loadTabInterpretation(category) {
   tabCache[category] = true;
 
   const container = document.getElementById('tab-' + category);
-  container.innerHTML = `<div class="ai-interp-block" id="ai-block-${category}">
-    <div class="body-text" id="ai-text-${category}"><span class="streaming-cursor"></span></div>
-  </div>`;
-
-  const textEl = document.getElementById('ai-text-' + category);
-  const prompt = buildPrompt(category, currentChart);
-  let fullText = '';
+  const msgs = {
+    personality: ['기질을 분석하는 중...', '성격을 풀이하는 중...', '해석을 완성하는 중...'],
+    career:      ['직업 적성을 분석하는 중...', '사회운을 풀이하는 중...', '해석을 완성하는 중...'],
+    love:        ['연애운을 분석하는 중...', '결혼운을 풀이하는 중...', '해석을 완성하는 중...'],
+    health:      ['건강운을 분석하는 중...', '체질을 풀이하는 중...', '해석을 완성하는 중...'],
+    wealth:      ['재물운을 분석하는 중...', '금전운을 풀이하는 중...', '해석을 완성하는 중...'],
+  };
+  const timer = showAILoading(container, msgs[category]);
 
   try {
-    const res = await fetch('/api/saju', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 4000,
-        stream: true,
-        messages: [{ role: 'user', content: prompt }]
-      })
-    });
-
-    const reader = res.body.getReader();
-    const dec = new TextDecoder();
-    let buf = '';
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buf += dec.decode(value, { stream: true });
-      const lines = buf.split('\n');
-      buf = lines.pop() ?? '';
-      for (const line of lines) {
-        const trimmed = line.trim();
-        if (!trimmed.startsWith('data:')) continue;
-        const raw = trimmed.slice(5).trim();
-        if (!raw || raw === '[DONE]') continue;
-        try {
-          const j = JSON.parse(raw);
-          let t = '';
-          if (j.type === 'content_block_delta' && j.delta?.type === 'text_delta') {
-            t = j.delta.text ?? '';
-          } else if (j.delta?.text) {
-            t = j.delta.text;
-          } else if (j.content?.[0]?.text) {
-            t = j.content[0].text;
-          }
-          if (t) {
-            fullText += t;
-            textEl.innerHTML = formatAIText(fullText) + '<span class="streaming-cursor"></span>';
-          }
-        } catch(pe) {}
-      }
-    }
-
-    if (!fullText) fullText = '해석을 받아오지 못했습니다. 탭을 다시 클릭해주세요.';
-    textEl.innerHTML = formatAIText(fullText);
-    appendKeywords(category, fullText, container);
-
+    const prompt = buildPrompt(category, currentChart);
+    const fullText = await fetchAI(prompt, 4000);
+    clearInterval(timer);
+    showAIResult(container, fullText || '해석을 받아오지 못했습니다. 탭을 다시 클릭해주세요.', category);
   } catch(e) {
+    clearInterval(timer);
     tabCache[category] = false;
     container.innerHTML = `<div class="ai-interp-block">
       <div class="body-text" style="color:var(--muted);font-size:13px;line-height:1.8;">
@@ -1441,6 +1428,73 @@ function appendKeywords(category, text, container) {
   }
 }
 
+
+
+// ── 공통 AI 호출 (로딩 후 한 번에 표시) ──
+function showAILoading(container, messages) {
+  const msgs = messages || ['풀이를 작성하는 중...', '사주를 분석하는 중...', '해석을 완성하는 중...'];
+  let idx = 0;
+  container.innerHTML = `
+    <div class="ai-loading-wrap">
+      <div class="ai-loading-symbol">命</div>
+      <div class="ai-loading-dots"><span></span><span></span><span></span></div>
+      <div class="ai-loading-text" id="ai-load-msg">${msgs[0]}</div>
+    </div>`;
+  const msgEl = container.querySelector('#ai-load-msg');
+  const timer = setInterval(() => {
+    idx = (idx + 1) % msgs.length;
+    if (msgEl) msgEl.textContent = msgs[idx];
+  }, 1800);
+  return timer;
+}
+
+async function fetchAI(prompt, maxTokens) {
+  const res = await fetch('/api/saju', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-6',
+      max_tokens: maxTokens || 4000,
+      stream: true,
+      messages: [{ role: 'user', content: prompt }]
+    })
+  });
+  if (!res.ok) throw new Error('API ' + res.status);
+
+  const reader = res.body.getReader();
+  const dec = new TextDecoder();
+  let buf = '', fullText = '';
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buf += dec.decode(value, { stream: true });
+    const lines = buf.split('\n');
+    buf = lines.pop() ?? '';
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed.startsWith('data:')) continue;
+      const raw = trimmed.slice(5).trim();
+      if (!raw || raw === '[DONE]') continue;
+      try {
+        const j = JSON.parse(raw);
+        let t = '';
+        if (j.type === 'content_block_delta' && j.delta?.type === 'text_delta') t = j.delta.text ?? '';
+        else if (j.delta?.text) t = j.delta.text;
+        if (t) fullText += t;
+      } catch(e) {}
+    }
+  }
+  return fullText;
+}
+
+function showAIResult(container, fullText, cacheKey) {
+  container.innerHTML = `
+    <div class="ai-interp-block ai-reveal">
+      <div class="body-text">${formatAIText(fullText)}</div>
+    </div>`;
+  appendKeywords(cacheKey, fullText, container);
+}
 
 function switchTab(name, btn) {
   document.querySelectorAll('#result .tab-btn').forEach(b=>b.classList.remove('active'));
@@ -1930,46 +1984,22 @@ B: ${p.dp.stem.kr}(${p.dp.stem.el}) / ${p.yp.stem.cn}${p.yp.branch.cn} ${p.mp.st
 600자 이상으로 작성하세요.`,
   };
 
-  const textEl = document.createElement('div');
-  textEl.className = 'ai-interp-block';
-  textEl.innerHTML = '<div class="body-text" id="gai-'+tab+'"><span class="streaming-cursor"></span></div>';
-  el.innerHTML = '';
-  el.appendChild(textEl);
-  const bodyEl = document.getElementById('gai-'+tab);
+  const gMsgs = {
+    overall: ['두 사람의 인연을 분석하는 중...', '오행 관계를 풀이하는 중...', '궁합을 완성하는 중...'],
+    love:    ['연애 궁합을 분석하는 중...', '결혼운을 풀이하는 중...', '해석을 완성하는 중...'],
+    work:    ['업무 궁합을 분석하는 중...', '우정 관계를 풀이하는 중...', '해석을 완성하는 중...'],
+    caution: ['주의사항을 분석하는 중...', '갈등 패턴을 풀이하는 중...', '해석을 완성하는 중...'],
+  };
+  const timer = showAILoading(el, gMsgs[tab]);
 
-  let fullText = '';
   try {
-    const res = await fetch('/api/saju', {
-      method:'POST', headers:{'content-type':'application/json'},
-      body: JSON.stringify({ model:'claude-sonnet-4-6', max_tokens:2000, stream:true, messages:[{role:'user',content:prompts[tab]}] })
-    });
-    const reader = res.body.getReader();
-    const dec = new TextDecoder();
-    let buf = '';
-    while(true){
-      const {done,value} = await reader.read();
-      if(done) break;
-      buf += dec.decode(value,{stream:true});
-      const lines = buf.split('\n'); buf = lines.pop()??'';
-      for(const line of lines){
-        const trimmed=line.trim();
-        if(!trimmed.startsWith('data:')) continue;
-        const raw=trimmed.slice(5).trim();
-        if(!raw||raw==='[DONE]') continue;
-        try{
-          const j=JSON.parse(raw);
-          let t='';
-          if(j.type==='content_block_delta'&&j.delta?.type==='text_delta') t=j.delta.text??'';
-          else if(j.delta?.text) t=j.delta.text;
-          if(t){ fullText+=t; bodyEl.innerHTML=formatAIText(fullText)+'<span class="streaming-cursor"></span>'; }
-        }catch(e){}
-      }
-    }
-    bodyEl.innerHTML = formatAIText(fullText||'분석을 불러오지 못했습니다.');
-    appendKeywords('g'+tab, fullText, el);
+    const fullText = await fetchAI(prompts[tab], 2000);
+    clearInterval(timer);
+    showAIResult(el, fullText || '분석을 불러오지 못했습니다.', 'g'+tab);
   } catch(e) {
-    gunghapTabCache[tab]=false;
-    bodyEl.innerHTML='<span style="color:var(--muted);">⚠️ 해석을 불러오지 못했습니다. 다시 클릭해주세요.</span>';
+    clearInterval(timer);
+    gunghapTabCache[tab] = false;
+    el.innerHTML = '<div class="ai-interp-block"><div class="body-text" style="color:var(--muted);">⚠️ 해석을 불러오지 못했습니다. 다시 클릭해주세요.</div></div>';
   }
 }
 
@@ -2082,46 +2112,23 @@ ${baseCtx}
 주의해야 할 신체 부위, 건강 관리법, 정신 건강을 구체적 예시와 함께 600자 이상 작성하세요.`,
   };
 
-  const textEl = document.createElement('div');
-  textEl.className = 'ai-interp-block';
-  textEl.innerHTML = '<div class="body-text" id="swai-'+tab+'"><span class="streaming-cursor"></span></div>';
-  el.innerHTML = '';
-  el.appendChild(textEl);
-  const bodyEl = document.getElementById('swai-'+tab);
+  const swMsgs = {
+    overall: [year+'년 운세를 분석하는 중...', '세운과 원국을 대조하는 중...', '풀이를 완성하는 중...'],
+    career:  ['직업운을 분석하는 중...', '사회운을 풀이하는 중...', '해석을 완성하는 중...'],
+    love:    ['연애운을 분석하는 중...', '결혼운을 풀이하는 중...', '해석을 완성하는 중...'],
+    wealth:  ['재물운을 분석하는 중...', '금전운을 풀이하는 중...', '해석을 완성하는 중...'],
+    health:  ['건강운을 분석하는 중...', '체질을 풀이하는 중...', '해석을 완성하는 중...'],
+  };
+  const timer = showAILoading(el, swMsgs[tab]);
 
-  let fullText = '';
   try {
-    const res = await fetch('/api/saju', {
-      method:'POST', headers:{'content-type':'application/json'},
-      body: JSON.stringify({ model:'claude-sonnet-4-6', max_tokens:2000, stream:true, messages:[{role:'user',content:prompts[tab]}] })
-    });
-    const reader = res.body.getReader();
-    const dec = new TextDecoder();
-    let buf = '';
-    while(true){
-      const {done,value}=await reader.read();
-      if(done) break;
-      buf+=dec.decode(value,{stream:true});
-      const lines=buf.split('\n'); buf=lines.pop()??'';
-      for(const line of lines){
-        const trimmed=line.trim();
-        if(!trimmed.startsWith('data:')) continue;
-        const raw=trimmed.slice(5).trim();
-        if(!raw||raw==='[DONE]') continue;
-        try{
-          const j=JSON.parse(raw);
-          let t='';
-          if(j.type==='content_block_delta'&&j.delta?.type==='text_delta') t=j.delta.text??'';
-          else if(j.delta?.text) t=j.delta.text;
-          if(t){ fullText+=t; bodyEl.innerHTML=formatAIText(fullText)+'<span class="streaming-cursor"></span>'; }
-        }catch(e){}
-      }
-    }
-    bodyEl.innerHTML=formatAIText(fullText||'분석을 불러오지 못했습니다.');
-    appendKeywords('sw'+tab, fullText, el);
-  } catch(e){
-    sewoonTabCache[tab]=false;
-    bodyEl.innerHTML='<span style="color:var(--muted);">⚠️ 해석을 불러오지 못했습니다. 다시 클릭해주세요.</span>';
+    const fullText = await fetchAI(prompts[tab], 2000);
+    clearInterval(timer);
+    showAIResult(el, fullText || '분석을 불러오지 못했습니다.', 'sw'+tab);
+  } catch(e) {
+    clearInterval(timer);
+    sewoonTabCache[tab] = false;
+    el.innerHTML = '<div class="ai-interp-block"><div class="body-text" style="color:var(--muted);">⚠️ 해석을 불러오지 못했습니다. 다시 클릭해주세요.</div></div>';
   }
 }
 
