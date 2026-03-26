@@ -552,7 +552,7 @@ nav {
 
     <!-- AI 해석 탭 -->
     <div class="section">
-      <div class="section-title"><span class="dot"></span>사주 해석 <span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:4px;">AI 풀이</span></div>
+      <div class="section-title"><span class="dot"></span>당신의 사주를 꿰뚫어 보는중</div>
       <div class="tab-row">
         <button class="tab-btn active" onclick="switchTab('personality',this)">기본 성격</button>
         <button class="tab-btn" onclick="switchTab('career',this)">직업·적성</button>
@@ -623,8 +623,11 @@ nav {
       <div class="gunghap-vs">❤</div>
       <div class="gunghap-profile-card" style="border:2px dashed var(--gold);">
         <h3>상대방</h3>
-        <div class="birth">생년월일을 입력해주세요</div>
+        <div class="birth">상대방 정보를 입력해주세요</div>
         <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px;">
+          <div style="display:flex;gap:6px;">
+            <input type="text" id="g-name" placeholder="이름 (선택)" style="flex:1;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--paper);font-family:'Noto Sans KR',sans-serif;">
+          </div>
           <div style="display:flex;gap:6px;">
             <input type="number" id="g-year" placeholder="년도" style="width:70px;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--paper);text-align:center;">
             <select id="g-month" style="flex:1;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:var(--paper);">
@@ -690,7 +693,7 @@ nav {
 
       <!-- AI 궁합 해석 탭 -->
       <div class="section">
-        <div class="section-title"><span class="dot"></span>궁합 상세 풀이 <span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:4px;">AI 풀이</span></div>
+        <div class="section-title"><span class="dot"></span>두 사람의 인연을 꿰뚫어 보는중</div>
         <div class="tab-row">
           <button class="tab-btn active" onclick="switchGunghapTab('overall',this)">종합</button>
           <button class="tab-btn" onclick="switchGunghapTab('love',this)">연애·결혼</button>
@@ -752,7 +755,7 @@ nav {
 
     <!-- AI 세운 해석 탭 -->
     <div class="section" id="sewoon-interp-section" style="display:none;">
-      <div class="section-title"><span class="dot"></span>세운 풀이 <span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:4px;">AI 풀이</span></div>
+      <div class="section-title"><span class="dot"></span>당신의 운세를 꿰뚫어 보는중</div>
       <div class="tab-row">
         <button class="tab-btn active" onclick="switchSewoonTab('overall',this)">종합운</button>
         <button class="tab-btn" onclick="switchSewoonTab('career',this)">직업·사업</button>
@@ -1045,9 +1048,24 @@ function selectGender(g) {
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
-  window.scrollTo(0,0);
-  if (id==='gunghap') updateGunghapMyProfile();
-  if (id==='sewoon')  initSewoon();
+
+  if (id === 'sewoon') {
+    initSewoon();
+    // 세운 화면: 년도 선택 그리드로 부드럽게 스크롤
+    setTimeout(() => {
+      const target = document.getElementById('sewoon-year-grid');
+      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 80);
+  } else if (id === 'gunghap') {
+    updateGunghapMyProfile();
+    // 궁합 화면: 상대방 입력 카드로 부드럽게 스크롤
+    setTimeout(() => {
+      const target = document.getElementById('gunghap-profiles');
+      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 80);
+  } else {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
 }
 
 function startCalc() {
@@ -1851,6 +1869,7 @@ function calcGunghap() {
   const day   = parseInt(document.getElementById('g-day').value);
   const hourV = document.getElementById('g-hour').value;
   const hour  = hourV === '' ? null : parseInt(hourV);
+  const gName = document.getElementById('g-name').value.trim() || '상대방';
   if (!year || !month || !day) { alert('상대방 생년월일을 입력해주세요.'); return; }
 
   const yp2 = calcYearPillar(year, month, day);
@@ -1873,7 +1892,9 @@ function calcGunghap() {
   gunghapTabCache = {};
 
   // AI 해석 로드
-  window._gunghapPartner = {yp:yp2,mp:mp2,dp:dp2,hp:hp2,elCounts:el2,gender:gunghapGender,year,month,day,score};
+  window._gunghapPartner = {yp:yp2,mp:mp2,dp:dp2,hp:hp2,elCounts:el2,gender:gunghapGender,year,month,day,score,name:gName};
+  // 프로필 카드 이름 업데이트
+  document.querySelector('#gunghap .gunghap-profile-card:last-child h3').textContent = gName;
   ['overall','love','work','caution'].forEach(t => {
     document.getElementById('gtab-'+t).innerHTML = renderSkeletonLoading();
   });
@@ -1916,12 +1937,12 @@ async function loadGunghapTab(tab) {
   const prompts = {
     overall: `당신은 30년 경력의 사주명리 전문가입니다. 두 사람의 사주를 비교해서 궁합을 풀이해주세요.
 
-【사람 A (${c.name || '나'}】
+【사람 A (${c.name || '나'})】
 - 생년월일: ${c.year}년 ${c.month}월 ${c.day}일 / 성별: ${c.gender}
 - 사주: ${c.yp.stem.cn}${c.yp.branch.cn} ${c.mp.stem.cn}${c.mp.branch.cn} ${c.dp.stem.cn}${c.dp.branch.cn} ${c.hp?c.hp.stem.cn+c.hp.branch.cn:'시주미상'}
 - 일간: ${c.dp.stem.kr}(${c.dp.stem.el}) / 오행: 목${c.elCounts['목']} 화${c.elCounts['화']} 토${c.elCounts['토']} 금${c.elCounts['금']} 수${c.elCounts['수']}
 
-【사람 B (상대방)】
+【사람 B (${p.name || '상대방'})】
 - 생년월일: ${p.year}년 ${p.month}월 ${p.day}일 / 성별: ${p.gender}
 - 사주: ${p.yp.stem.cn}${p.yp.branch.cn} ${p.mp.stem.cn}${p.mp.branch.cn} ${p.dp.stem.cn}${p.dp.branch.cn} ${p.hp?p.hp.stem.cn+p.hp.branch.cn:'시주미상'}
 - 일간: ${p.dp.stem.kr}(${p.dp.stem.el}) / 오행: 목${p.elCounts['목']} 화${p.elCounts['화']} 토${p.elCounts['토']} 금${p.elCounts['금']} 수${p.elCounts['수']}
@@ -1949,8 +1970,8 @@ async function loadGunghapTab(tab) {
 
     love: `사주명리 전문가로서 두 사람의 연애·결혼 궁합을 풀이해주세요.
 
-A: ${c.dp.stem.kr}(${c.dp.stem.el}) 일간 / ${c.gender} / ${c.yp.stem.cn}${c.yp.branch.cn} ${c.mp.stem.cn}${c.mp.branch.cn} ${c.dp.stem.cn}${c.dp.branch.cn}
-B: ${p.dp.stem.kr}(${p.dp.stem.el}) 일간 / ${p.gender} / ${p.yp.stem.cn}${p.yp.branch.cn} ${p.mp.stem.cn}${p.mp.branch.cn} ${p.dp.stem.cn}${p.dp.branch.cn}
+${c.name||'A'}: ${c.dp.stem.kr}(${c.dp.stem.el}) 일간 / ${c.gender} / ${c.yp.stem.cn}${c.yp.branch.cn} ${c.mp.stem.cn}${c.mp.branch.cn} ${c.dp.stem.cn}${c.dp.branch.cn}
+${p.name||'B'}: ${p.dp.stem.kr}(${p.dp.stem.el}) 일간 / ${p.gender} / ${p.yp.stem.cn}${p.yp.branch.cn} ${p.mp.stem.cn}${p.mp.branch.cn} ${p.dp.stem.cn}${p.dp.branch.cn}
 
 1. **첫눈에 반하는 포인트** — 서로 어떤 점에 끌리는지
 2. **연애할 때 두 사람의 모습** — 구체적인 일상 장면 묘사
@@ -1993,7 +2014,7 @@ B: ${p.dp.stem.kr}(${p.dp.stem.el}) / ${p.yp.stem.cn}${p.yp.branch.cn} ${p.mp.st
   const timer = showAILoading(el, gMsgs[tab]);
 
   try {
-    const fullText = await fetchAI(prompts[tab], 2000);
+    const fullText = await fetchAI(prompts[tab], 4000);
     clearInterval(timer);
     showAIResult(el, fullText || '분석을 불러오지 못했습니다.', 'g'+tab);
   } catch(e) {
@@ -2122,7 +2143,7 @@ ${baseCtx}
   const timer = showAILoading(el, swMsgs[tab]);
 
   try {
-    const fullText = await fetchAI(prompts[tab], 2000);
+    const fullText = await fetchAI(prompts[tab], 4000);
     clearInterval(timer);
     showAIResult(el, fullText || '분석을 불러오지 못했습니다.', 'sw'+tab);
   } catch(e) {
