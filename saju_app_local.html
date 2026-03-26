@@ -445,6 +445,78 @@ nav {
   from { opacity:0; transform:translateY(16px); }
   to   { opacity:1; transform:translateY(0); }
 }
+
+/* ── 십성 툴팁 모달 ── */
+.ten-god-tag { cursor:pointer; }
+.ten-god-tag:hover { opacity:.85; transform:scale(1.05); transition:all .15s; }
+
+.tg-modal-overlay {
+  position:fixed; inset:0; background:rgba(0,0,0,.5);
+  z-index:500; display:flex; align-items:flex-end; justify-content:center;
+  animation:fadeIn .2s ease;
+}
+.tg-modal {
+  background:var(--paper); border-radius:20px 20px 0 0;
+  padding:28px 24px 40px; width:100%; max-width:480px;
+  animation:slideUp .25s cubic-bezier(.22,1,.36,1);
+}
+@keyframes slideUp { from{transform:translateY(100%);} to{transform:translateY(0);} }
+.tg-modal-handle {
+  width:36px; height:4px; border-radius:2px;
+  background:var(--border); margin:0 auto 20px;
+}
+.tg-modal-title {
+  font-family:'Noto Serif KR',serif; font-size:20px; font-weight:600;
+  margin-bottom:6px; display:flex; align-items:center; gap:10px;
+}
+.tg-modal-subtitle { font-size:13px; color:var(--muted); margin-bottom:16px; }
+.tg-modal-body { font-size:14px; color:var(--ink-light); line-height:1.9; font-weight:300; }
+.tg-modal-keywords {
+  display:flex; flex-wrap:wrap; gap:6px; margin-top:14px;
+  padding-top:14px; border-top:1px solid var(--border);
+}
+.tg-modal-keyword {
+  font-size:11px; padding:3px 10px; border-radius:99px;
+  background:var(--paper-warm); color:var(--muted); border:1px solid var(--border);
+}
+
+/* ── 대운 카드 개선 ── */
+.daewoon-card {
+  min-width:130px; border-right:1px solid var(--border);
+  padding:16px 14px; position:relative; cursor:pointer;
+  transition:background .2s; flex-shrink:0;
+}
+.daewoon-card:last-child { border-right:none; }
+.daewoon-card:hover { background:rgba(201,168,76,0.05); }
+.daewoon-card.current { background:rgba(201,168,76,0.08); }
+.daewoon-card.current::before {
+  content:'현재'; position:absolute; top:6px; right:8px;
+  font-size:9px; color:var(--gold); font-weight:600;
+  background:var(--gold-pale); padding:2px 7px; border-radius:99px;
+}
+.daewoon-age-range { font-size:10px; color:var(--muted); margin-bottom:4px; }
+.daewoon-age-label {
+  font-size:12px; font-weight:500; color:var(--ink);
+  margin-bottom:8px;
+}
+.daewoon-ganzhi {
+  font-family:'Noto Serif KR',serif; font-size:22px; font-weight:900;
+  color:var(--ink); margin-bottom:4px; letter-spacing:.05em;
+}
+.daewoon-card.current .daewoon-ganzhi { color:var(--gold); }
+.daewoon-el-row {
+  display:flex; gap:4px; flex-wrap:wrap; margin-top:6px;
+}
+.daewoon-el-badge {
+  font-size:10px; padding:2px 7px; border-radius:99px;
+  font-weight:500;
+}
+
+@media(max-width:768px){
+  .daewoon-card { min-width:108px; padding:12px 10px; }
+  .daewoon-ganzhi { font-size:19px; }
+  .daewoon-age-label { font-size:11px; }
+}
 </style>
 </head>
 <body>
@@ -1192,21 +1264,35 @@ function renderResult(chart) {
   });
   document.getElementById('ten-gods-wrap').innerHTML =
     Object.entries(tgMap).sort((a,b)=>b[1]-a[1]).slice(0,5)
-      .map(([tg])=>`<span class="ten-god-tag ${tgCls[tg]||'tg-bijep'}">${tg}</span>`).join('');
+      .map(([tg])=>`<span class="ten-god-tag ${tgCls[tg]||'tg-bijep'}" onclick="showTenGodModal('${tg}')" title="클릭하면 설명을 볼 수 있어요">${tg} <span style="font-size:10px;opacity:.6;">?</span></span>`).join('');
 
   // 대운
   const currentYear = new Date().getFullYear();
   const currentAge = currentYear - chart.year;
-  document.getElementById('daewoon-timeline').innerHTML = chart.daewoons.map((dw,i) =>
-    `<div class="daewoon-item ${currentAge >= dw.startAge && currentAge <= dw.endAge ? 'current' : ''}"
-      ${i===0?'style="padding-left:28px;"':''} ${i===chart.daewoons.length-1?'style="padding-right:28px;"':''}>
-      <div class="daewoon-age">${dw.startAge}~${dw.endAge}세</div>
-      <div class="daewoon-chars" style="${currentAge>=dw.startAge&&currentAge<=dw.endAge?'color:var(--gold);':''}">
-        ${dw.stem.cn}<br>${dw.branch.cn}
+  const EL_COLOR_MAP = {목:'var(--wood)',화:'var(--fire)',토:'#b8861c',금:'var(--metal)',수:'var(--water)'};
+  document.getElementById('daewoon-timeline').innerHTML = chart.daewoons.map((dw,i) => {
+    const isCurrent = currentAge >= dw.startAge && currentAge <= dw.endAge;
+    const realYear = chart.year + dw.startAge;
+    // 대운 특성 요약
+    const elDesc = {
+      목:'성장·도전의 시기',화:'열정·활동의 시기',
+      토:'안정·축적의 시기',금:'결실·정리의 시기',수:'지혜·성찰의 시기'
+    };
+    // 주도 오행 (천간 우선)
+    const mainEl = dw.stem.el;
+    return `<div class="daewoon-card ${isCurrent?'current':''}"
+      ${i===0?'style="padding-left:20px;"':''}>
+      <div class="daewoon-age-range">${dw.startAge}~${dw.endAge}세</div>
+      <div class="daewoon-age-label">${realYear}년~</div>
+      <div class="daewoon-ganzhi">${dw.stem.cn}${dw.branch.cn}</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:6px;">${dw.stem.kr}${dw.branch.kr}</div>
+      <div class="daewoon-el-row">
+        <span class="daewoon-el-badge ${EL_CLASS[dw.stem.el]}">${dw.stem.el}</span>
+        <span class="daewoon-el-badge ${EL_CLASS[dw.branch.el]}">${dw.branch.el}</span>
       </div>
-      <div class="daewoon-el">${dw.stem.kr}${dw.branch.kr} · ${dw.stem.el}${dw.branch.el}</div>
-    </div>`
-  ).join('');
+      <div style="font-size:10px;color:${EL_COLOR_MAP[mainEl]};margin-top:6px;line-height:1.4;">${elDesc[mainEl]||''}</div>
+    </div>`;
+  }).join('');
 
   // 탭 초기화
   ['personality','career','love','health','wealth'].forEach(t => {
@@ -1447,6 +1533,116 @@ function appendKeywords(category, text, container) {
 }
 
 
+
+// ── 십성(十星) 데이터베이스 ──
+const TEN_GOD_DB = {
+  '비견': {
+    name: '비견 (比肩)',
+    subtitle: '나와 같은 어깨 · 동료',
+    emoji: '🤝',
+    cls: 'tg-bijep',
+    desc: `비견은 나(일간)와 같은 오행, 같은 음양을 가진 십성입니다. 말 그대로 '어깨를 나란히 하는 존재'로, 나와 비슷한 성향을 가진 사람을 상징합니다.\n\n비견이 강한 사람은 독립심과 자존심이 매우 강합니다. 누군가의 지시를 받기보다 스스로 결정하고 행동하길 좋아하며, 한번 마음먹은 일은 끝까지 밀어붙이는 추진력이 있습니다. 경쟁심도 강해서 같은 분야에서 두각을 나타내려는 욕구가 있습니다.\n\n대인관계에서는 동료나 친구와의 유대가 강하지만, 고집이 세서 의견 충돌이 생기기도 합니다. 재물면에서는 지출이 많거나 주변에 나눠주는 경향이 있습니다.`,
+    keywords: ['독립심', '자존심', '경쟁심', '추진력', '동료']
+  },
+  '겁재': {
+    name: '겁재 (劫財)',
+    subtitle: '재물을 빼앗는 자 · 라이벌',
+    emoji: '⚡',
+    cls: 'tg-bijep',
+    desc: `겁재는 나와 같은 오행이지만 음양이 다른 십성입니다. '재물을 겁탈한다'는 뜻을 가지며, 강한 승부욕과 추진력을 상징합니다.\n\n겁재가 강한 사람은 승부욕이 매우 강하고 과감한 결단력을 갖습니다. 도전적인 기질로 어려운 상황에서도 물러서지 않는 배짱이 있습니다. 사업이나 스포츠, 경쟁이 치열한 분야에서 빛을 발하는 기질입니다.\n\n다만 충동적인 결정으로 재물 손실이 생기거나 인간관계에서 갈등을 일으킬 수 있습니다. 겁재가 많으면 큰 성공과 큰 실패를 반복하는 기복 있는 삶을 살기 쉽습니다.`,
+    keywords: ['승부욕', '과감함', '배짱', '기복', '경쟁']
+  },
+  '식신': {
+    name: '식신 (食神)',
+    subtitle: '먹을 복 · 창의와 표현',
+    emoji: '🌸',
+    cls: 'tg-siksang',
+    desc: `식신은 내가 생(生)하는 오행으로 음양이 같은 십성입니다. '먹는 신'이라는 뜻처럼 먹을 복과 풍요로움을 상징하며, 가장 길한 십성 중 하나입니다.\n\n식신이 강한 사람은 창의력이 풍부하고 예술적 감각이 뛰어납니다. 여유롭고 낙천적인 성격으로 주변 사람들을 편안하게 만드는 매력이 있습니다. 음식, 예술, 교육, 복지 분야와 잘 맞으며 특히 요리나 서비스업에서 재능을 발휘합니다.\n\n재물복도 있어서 큰 노력 없이도 먹고 사는 데 지장이 없는 편입니다. 다만 너무 여유로워서 의욕이 부족하거나 나태해질 수 있습니다.`,
+    keywords: ['창의력', '풍요', '여유', '낙천적', '먹을복']
+  },
+  '상관': {
+    name: '상관 (傷官)',
+    subtitle: '관성을 상하게 함 · 표현과 반항',
+    emoji: '🎭',
+    cls: 'tg-siksang',
+    desc: `상관은 내가 생하는 오행으로 음양이 다른 십성입니다. '관(官)을 상하게 한다'는 뜻으로, 규칙과 권위에 도전하는 기질을 상징합니다.\n\n상관이 강한 사람은 총명하고 언변이 뛰어나며 표현력이 탁월합니다. 창의적이고 독창적인 아이디어로 기존의 틀을 깨는 것을 즐깁니다. 예술, 언론, 법조계, 창업 분야에서 두각을 나타내는 경우가 많습니다.\n\n다만 윗사람과의 마찰이 잦고, 직장생활보다 자유로운 환경이 맞습니다. 감정 표현이 솔직해서 때로는 상대방에게 상처를 주기도 합니다. 여성의 경우 상관이 강하면 남편복이 약하다고 보는 전통적 해석이 있습니다.`,
+    keywords: ['총명함', '언변', '반항기', '창의성', '자유로움']
+  },
+  '편재': {
+    name: '편재 (偏財)',
+    subtitle: '치우친 재물 · 사업과 투자',
+    emoji: '💰',
+    cls: 'tg-jaesung',
+    desc: `편재는 내가 극(剋)하는 오행으로 음양이 같은 십성입니다. 정해진 수입보다는 사업, 투자, 부업 등으로 얻는 '편법적인 재물'을 상징합니다.\n\n편재가 강한 사람은 사업가적 기질이 있고 재물을 끌어모으는 능력이 뛰어납니다. 활동적이고 사교적이며 이동과 변화를 즐기는 역마(驛馬)의 기운도 있습니다. 한 곳에 정착하기보다 여러 곳을 돌아다니며 기회를 찾는 타입입니다.\n\n한 번에 큰돈을 벌기도 하지만 씀씀이도 커서 재물의 기복이 있을 수 있습니다. 남성의 경우 편재는 부친을 상징하기도 합니다.`,
+    keywords: ['사업가', '투자', '활동적', '역마', '큰재물']
+  },
+  '정재': {
+    name: '정재 (正財)',
+    subtitle: '바른 재물 · 안정과 성실',
+    emoji: '🏦',
+    cls: 'tg-jaesung',
+    desc: `정재는 내가 극하는 오행으로 음양이 다른 십성입니다. 월급, 임대료 등 안정적이고 정직하게 버는 '바른 재물'을 상징합니다.\n\n정재가 강한 사람은 성실하고 꼼꼼하며 절약정신이 강합니다. 한 푼 한 푼 착실하게 모아가는 타입으로, 재테크보다는 저축과 안정적인 수입을 선호합니다. 약속을 잘 지키고 신뢰감이 높아 주변 사람들에게 믿음을 줍니다.\n\n다만 지나치게 보수적이어서 새로운 기회를 놓치거나, 돈에 집착하는 경향이 생길 수 있습니다. 남성의 경우 정재는 배우자를 상징하기도 합니다.`,
+    keywords: ['성실', '저축', '안정', '신뢰', '절약']
+  },
+  '편관': {
+    name: '편관 (偏官)',
+    subtitle: '칠살 · 도전과 권력',
+    emoji: '⚔️',
+    cls: 'tg-gwansung',
+    desc: `편관은 나를 극하는 오행으로 음양이 같은 십성입니다. '칠살(七殺)'이라고도 불리며, 강한 압박과 도전을 상징합니다.\n\n편관이 강한 사람은 강한 의지력과 리더십을 가지고 있습니다. 어려운 상황에서 오히려 빛을 발하며, 군인, 경찰, 스포츠 선수 등 강인함이 필요한 분야에서 성공하는 경우가 많습니다. 권력 지향적이며 높은 곳을 향한 야망이 있습니다.\n\n다만 충동적이거나 고압적인 태도로 인한 갈등이 생길 수 있습니다. 편관의 기운을 잘 다스리면 큰 성공을 거둘 수 있지만, 다스리지 못하면 어려움을 겪기 쉽습니다.`,
+    keywords: ['강인함', '리더십', '야망', '도전', '권력']
+  },
+  '정관': {
+    name: '정관 (正官)',
+    subtitle: '바른 관직 · 명예와 원칙',
+    emoji: '🎖️',
+    cls: 'tg-gwansung',
+    desc: `정관은 나를 극하는 오행으로 음양이 다른 십성입니다. 가장 길한 십성 중 하나로, 명예와 원칙, 사회적 지위를 상징합니다.\n\n정관이 강한 사람은 원칙적이고 책임감이 강하며 도덕적입니다. 규칙과 질서를 중시하고 맡은 일은 반드시 완수하는 성실함이 있습니다. 공직, 대기업, 법조계 등 안정적이고 권위 있는 직종에서 능력을 발휘합니다.\n\n타인에게 신뢰감과 안정감을 주는 매력이 있습니다. 다만 지나치게 원칙적이어서 융통성이 부족하거나, 체면을 너무 중시하는 경향이 있을 수 있습니다. 여성의 경우 정관은 남편을 상징하기도 합니다.`,
+    keywords: ['명예', '원칙', '책임감', '공직', '신뢰']
+  },
+  '편인': {
+    name: '편인 (偏印)',
+    subtitle: '기울어진 인수 · 직관과 고독',
+    emoji: '🔮',
+    cls: 'tg-insung',
+    desc: `편인은 나를 생하는 오행으로 음양이 같은 십성입니다. '효신(梟神)'이라고도 불리며, 특수한 재능과 직관력을 상징합니다.\n\n편인이 강한 사람은 직관력이 뛰어나고 특수 분야의 학문이나 기술에 관심이 많습니다. 철학, 종교, 역술, 의학, 예술 등 남들이 잘 가지 않는 길에서 독보적인 능력을 발휘합니다. 독창적인 사고방식을 가지고 있어 창의적인 분야에서 두각을 나타냅니다.\n\n다만 고독한 성향이 있고, 집중력이 좋다가도 갑자기 싫증을 느끼는 편식 기질이 있습니다. 시작은 잘 하지만 마무리가 약할 수 있습니다.`,
+    keywords: ['직관력', '특수재능', '철학', '고독', '독창성']
+  },
+  '정인': {
+    name: '정인 (正印)',
+    subtitle: '바른 인수 · 학문과 모성',
+    emoji: '📚',
+    cls: 'tg-insung',
+    desc: `정인은 나를 생하는 오행으로 음양이 다른 십성입니다. 가장 길한 십성 중 하나로, 학문과 지식, 어머니의 사랑을 상징합니다.\n\n정인이 강한 사람은 학습 능력이 뛰어나고 지식을 쌓는 것을 좋아합니다. 차분하고 침착하며 논리적인 사고를 하는 편입니다. 교육, 연구, 출판, 상담 등 지식을 나누는 분야에서 능력을 발휘합니다.\n\n주변으로부터 도움과 지원을 잘 받는 편이며, 인덕(人德)이 있습니다. 다만 너무 의존적이거나 나태해질 수 있고, 현실적인 행동력이 부족해질 수 있습니다. 어머니와의 인연이 깊다고 봅니다.`,
+    keywords: ['학문', '지식', '모성', '인덕', '차분함']
+  },
+};
+
+function showTenGodModal(tgName) {
+  const data = TEN_GOD_DB[tgName];
+  if (!data) return;
+
+  const overlay = document.createElement('div');
+  overlay.className = 'tg-modal-overlay';
+  overlay.onclick = (e) => { if(e.target===overlay) overlay.remove(); };
+
+  overlay.innerHTML = `
+    <div class="tg-modal">
+      <div class="tg-modal-handle"></div>
+      <div class="tg-modal-title">
+        <span style="font-size:24px;">${data.emoji}</span>
+        <span>${data.name}</span>
+        <span class="ten-god-tag ${data.cls}" style="margin-left:auto;font-size:11px;">${tgName}</span>
+      </div>
+      <div class="tg-modal-subtitle">${data.subtitle}</div>
+      <div class="tg-modal-body">${data.desc.replace(/\n/g,'<br>')}</div>
+      <div class="tg-modal-keywords">
+        ${data.keywords.map(k=>`<span class="tg-modal-keyword">${k}</span>`).join('')}
+      </div>
+    </div>`;
+
+  document.body.appendChild(overlay);
+}
 
 // ── 공통 AI 호출 (로딩 후 한 번에 표시) ──
 function showAILoading(container, messages) {
