@@ -3,8 +3,7 @@ const https = require('https');
 const fs = require('fs');
 const path = require('path');
 
-const PORT = 3000;
-// 이렇게 바꾸기 (실제 키 삭제)
+const PORT = process.env.PORT || 3000;
 const API_KEY = process.env.ANTHROPIC_API_KEY || 'YOUR_API_KEY_HERE';
 
 const server = http.createServer((req, res) => {

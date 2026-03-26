@@ -247,16 +247,103 @@ nav {
 @keyframes fadeUp { from{opacity:0;transform:translateY(20px);} to{opacity:1;transform:translateY(0);} }
 @keyframes fadeIn { from{opacity:0;} to{opacity:1;} }
 
-@media(max-width:640px) {
-  nav { padding:0 20px; }
+/* ── 모바일 전체 최적화 ── */
+@media(max-width:768px) {
+
+  /* 네비 */
+  nav { padding:0 16px; height:56px; }
   .nav-links { display:none; }
-  #home { padding:90px 20px 60px; }
-  .hero-symbol { font-size:56px; }
-  .hero h1 { font-size:26px; }
-  .input-card { padding:28px 20px; }
+  .nav-logo { font-size:18px; gap:7px; }
+  .nav-logo-sub { display:none; }
+
+  /* 홈 */
+  #home { padding:72px 16px 40px; }
+  .hero { margin-bottom:28px; }
+  .hero-symbol { font-size:52px; margin-bottom:12px; }
+  .hero h1 { font-size:22px; margin-bottom:10px; }
+  .hero p { font-size:13px; }
+
+  /* 입력 카드 */
+  .input-card { padding:24px 16px; border-radius:16px; }
+  .input-card h2 { font-size:16px; margin-bottom:20px; }
+  .form-row-3 { grid-template-columns:1fr 1fr 1fr; gap:8px; }
+  .form-row-2 { grid-template-columns:1fr 1fr; gap:8px; }
+  .form-group label { font-size:10px; margin-bottom:5px; }
+  .form-group input, .form-group select { padding:10px 10px; font-size:13px; border-radius:8px; }
+  .gender-btn { padding:9px 6px; font-size:12px; }
+  .hint { font-size:11px; padding:9px 12px; margin:10px 0 16px; }
+  .btn-main { padding:14px; font-size:15px; border-radius:10px; }
+
+  /* 결과 화면 */
+  #result { padding:72px 16px 60px; }
+  .result-header { margin-bottom:28px; }
+  .result-header h1 { font-size:20px; }
+  .result-header p { font-size:12px; }
+  .name-badge { font-size:11px; padding:4px 12px; }
+
+  /* 사주 기둥 — 2x2 그리드 */
+  .pillars-grid { grid-template-columns:repeat(2,1fr); gap:8px; margin-bottom:16px; }
+  .pillar { padding:16px 10px; border-radius:12px; }
+  .pillar-label { font-size:9px; margin-bottom:10px; }
+  .pillar-stem { font-size:28px; }
+  .pillar-stem-name { font-size:10px; margin-bottom:10px; }
+  .pillar-branch { font-size:24px; }
+  .pillar-branch-name { font-size:10px; margin-bottom:8px; }
+  .pillar-element-badge { font-size:10px; padding:2px 8px; }
+  .divider-line { margin:0 auto 10px; }
+
+  /* 오행/음양 — 1열로 */
+  #result > div > div:nth-child(3) { grid-template-columns:1fr !important; }
+
+  /* 섹션 공통 */
+  .section { padding:20px 16px; border-radius:12px; margin-bottom:12px; }
+  .section-title { font-size:14px; margin-bottom:14px; }
+
+  /* 오행 차트 */
+  .elements-chart { height:80px; gap:6px; }
+  .element-bar-wrap { gap:5px; }
+
+  /* 십성 태그 */
+  .ten-god-tag { padding:5px 10px; font-size:11px; }
+
+  /* 해석 탭 */
+  .tab-row { gap:3px; padding:3px; border-radius:10px; }
+  .tab-btn { padding:8px 4px; font-size:11px; min-width:52px; border-radius:7px; }
+
+  /* AI 해석 블록 */
+  .ai-interp-block { padding:16px 14px; border-radius:12px; margin-bottom:10px; }
+  .ai-interp-block h3 { font-size:14px; margin-bottom:10px; }
+  .ai-interp-block .body-text { font-size:13px; line-height:1.9; }
+
+  /* 키워드 */
+  .keyword { font-size:10px; padding:3px 8px; }
+  .keyword-wrap { gap:5px; margin-top:12px; }
+
+  /* 대운 타임라인 */
+  .daewoon-timeline { padding-bottom:12px; }
+  .daewoon-item { min-width:72px; padding:12px 10px; }
+  .daewoon-age { font-size:9px; margin-bottom:6px; }
+  .daewoon-chars { font-size:17px; }
+  .daewoon-el { font-size:9px; margin-top:4px; }
+
+  /* 다시 입력 버튼 */
+  .btn-main[style] { max-width:100% !important; }
+
+  /* 로딩 */
+  .loading-symbol { font-size:48px; }
+  .loading-text { font-size:13px; }
+}
+
+.el-yy-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px; }
+@media(max-width:768px) { .el-yy-grid { grid-template-columns:1fr !important; } }
+
+/* 아주 작은 화면 (320px~) */
+@media(max-width:380px) {
   .form-row-3 { grid-template-columns:1fr; }
-  #result { padding:90px 20px 60px; }
-  .pillars-grid { grid-template-columns:repeat(2,1fr); }
+  .tab-btn { font-size:10px; padding:7px 2px; min-width:44px; }
+  .pillars-grid { gap:6px; }
+  .pillar-stem { font-size:24px; }
+  .pillar-branch { font-size:20px; }
 }
 </style>
 </head>
@@ -341,7 +428,7 @@ nav {
 
     <div class="pillars-grid" id="pillars-grid"></div>
 
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+    <div class="el-yy-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
       <div class="section">
         <div class="section-title"><span class="dot"></span>오행 분포</div>
         <div class="elements-chart" id="element-chart"></div>
