@@ -575,24 +575,33 @@ function calcYearPillar(year, month, day) {
 
 // 월주 계산 (절기 기준 정확한 버전)
 function calcMonthPillar(year, month, day) {
-  // 각 월 절기일 (0=입춘~11=소한)
-  const termDay = getSolarTermDay(year, month - 1);
-  let mIdx = month - 1; // 0-based 현재월 절기 인덱스
+  // 월별 절기 인덱스 매핑 (절기 테이블은 입춘부터 시작)
+  // 1월=소한(11), 2월=입춘(0), 3월=경칩(1), 4월=청명(2)
+  // 5월=입하(3),  6월=망종(4), 7월=소서(5), 8월=입추(6)
+  // 9월=백로(7), 10월=한로(8),11월=입동(9),12월=대설(10)
+  const monthToTermIdx = [11,0,1,2,3,4,5,6,7,8,9,10];
+  const termIdx = monthToTermIdx[month - 1];
+  const termDay = getSolarTermDay(year, termIdx);
+
+  // 월건(月建) 결정
+  // mIdx: 0=인월(2월절기), 1=묘월(3월), ..., 10=자월(11월), 11=축월(12월)
+  // month=1(1월)은 축월(mIdx=11) 또는 소한 전이면 자월(mIdx=10)
+  const monthToMIdx = [11,0,1,2,3,4,5,6,7,8,9,10]; // month 1~12 → mIdx
+  let mIdx = monthToMIdx[month - 1];
   if (day < termDay) {
     mIdx = (mIdx - 1 + 12) % 12; // 절기 전이면 전달 월건
   }
 
-  // 월지: 인월(0)=index2 ~ 축월(11)=index1
-  // mIdx 0=인,1=묘,2=진,3=사,4=오,5=미,6=신,7=유,8=술,9=해,10=자,11=축
-  const branchMap = [2,3,4,5,6,7,8,9,10,11,0,1]; // BRANCHES 인덱스
+  // 월지: mIdx 0=인(BRANCHES[2]) ~ 11=축(BRANCHES[1])
+  const branchMap = [2,3,4,5,6,7,8,9,10,11,0,1];
   const branchIdx = branchMap[mIdx];
 
-  // 월간: 년간 기준 오호둔원법
-  // 갑기년: 인월=병(idx2), 을경년: 인월=무(idx4), 병신년: 인월=경(idx6)
-  // 정임년: 인월=임(idx8), 무계년: 인월=갑(idx0)
+  // 월간: 오호둔원법
+  // 갑기년 인월=병(2), 을경년 인월=무(4), 병신년 인월=경(6)
+  // 정임년 인월=임(8), 무계년 인월=갑(0)
   const yp = calcYearPillar(year, month, day);
-  const yearStemIdx = yp.stem.id - 1; // 0-based
-  const stemStartMap = [2, 4, 6, 8, 0]; // 갑기/을경/병신/정임/무계년 → 인월 시작 천간
+  const yearStemIdx = yp.stem.id - 1;
+  const stemStartMap = [2, 4, 6, 8, 0];
   const startStem = stemStartMap[yearStemIdx % 5];
   const stemIdx = (startStem + mIdx) % 10;
 
