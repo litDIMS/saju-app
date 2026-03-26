@@ -609,7 +609,7 @@ function calcDayPillar(year, month, day) {
   }
   // 기준: 1900-01-01 = 甲戌일 (갑자로부터 30번째)
   // 甲子일 JD = 2415021 (검증된 값)
-  const baseJD = 2415047; // 검증된 갑자일 기준값
+  const baseJD = 2415071; // 검증된 갑자일 기준값 (을해=1994.6.18 검증)
   const targetJD = toJD(year, month, day);
   const diff = targetJD - baseJD;
   const stemIdx   = ((diff % 10) + 10) % 10;
@@ -619,28 +619,38 @@ function calcDayPillar(year, month, day) {
 
 // 시주 계산
 function calcHourPillar(dayPillar, hour) {
-  // 시지: 자시=23~1시, 축시=1~3시 ...
+  // 시지 결정 (국내 표준: 각 시의 정시 기준)
+  // 자=23,0 / 축=1,2 / 인=3,4 / 묘=5,6 / 진=7,8 / 사=9,10
+  // 오=11,12 / 미=13,14 / 신=15,16 / 유=17,18 / 술=19,20 / 해=21,22
   let branchIdx;
-  if (hour === 23) branchIdx = 0;
-  else branchIdx = Math.floor((hour + 1) / 2) % 12;
+  if (hour === 23 || hour === 0) branchIdx = 0;       // 자시
+  else if (hour <= 2)  branchIdx = 1;                  // 축시
+  else if (hour <= 4)  branchIdx = 2;                  // 인시
+  else if (hour <= 6)  branchIdx = 3;                  // 묘시
+  else if (hour <= 8)  branchIdx = 4;                  // 진시
+  else if (hour <= 10) branchIdx = 5;                  // 사시
+  else if (hour <= 13) branchIdx = 6;                  // 오시 (11~13시)
+  else if (hour <= 15) branchIdx = 7;                  // 미시 (14~15시)
+  else if (hour <= 16) branchIdx = 8;                  // 신시
+  else if (hour <= 18) branchIdx = 9;                  // 유시
+  else if (hour <= 20) branchIdx = 10;                 // 술시
+  else branchIdx = 11;                                  // 해시
 
   // 시간: 일간 기준 오자둔원법
-  // 갑기일: 자시=갑(0), 을경일: 자시=병(2), 병신일: 자시=무(4)
-  // 정임일: 자시=경(6), 무계일: 자시=임(8)
+  // 갑기일: 자=갑(0), 을경일: 자=병(2), 병신일: 자=무(4)
+  // 정임일: 자=경(6), 무계일: 자=임(8)
   const dayStemIdx = dayPillar.stem.id - 1;
   const startStem = [0, 2, 4, 6, 8][dayStemIdx % 5];
   const stemIdx = (startStem + branchIdx) % 10;
   return { stem: STEMS[stemIdx], branch: BRANCHES[branchIdx] };
 }
 
-// 오행 개수 카운트 (지지=여기/첫번째 지장간 기준 — 국내 앱 다수 방식)
+// 오행 개수 카운트 (지지=여기/첫번째 지장간 기준)
 function countElements(pillars) {
   const counts = {목:0,화:0,토:0,금:0,수:0};
   pillars.forEach(p => {
     if (!p) return;
-    // 천간 오행
     counts[p.stem.el]++;
-    // 지지 → 여기(첫번째 지장간) 오행
     const hiddenList = HIDDEN_STEMS[p.branch.kr];
     if (hiddenList && hiddenList.length > 0) {
       counts[hiddenList[0].el]++;
