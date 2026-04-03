@@ -1779,10 +1779,8 @@ function openSectionCard(card) {
 }
 
 async function loadAllInterpretations() {
-  // 이미 로드됐으면 스킵
   if (fullInterpCache) return;
 
-  // 모든 탭에 로딩 표시
   const allTabs = ['personality','career','love','health','wealth'];
   const loadingMsgs = ['사주를 분석하는 중...', '오행을 풀이하는 중...', '해석을 완성하는 중...'];
   const timers = {};
@@ -1792,24 +1790,70 @@ async function loadAllInterpretations() {
     tabCache[t] = true;
   });
 
+  // ── 1순위: 사전 생성 DB 조회
+  const dayPillarKey = currentChart.dp.stem.kr + currentChart.dp.branch.kr;
+  const CAT_MAP = {
+    personality: 'personality', career: 'career',
+    love: 'love', health: 'health', wealth: 'wealth'
+  };
+
+  let dbHits = 0;
+  const dbResults = {};
+
+  await Promise.all(allTabs.map(async (t) => {
+    try {
+      const res = await fetch('/api/interpret', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ dayPillar: dayPillarKey, category: CAT_MAP[t] })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.text) { dbResults[t] = data.text; dbHits++; }
+      }
+    } catch(e) {}
+  }));
+
+  // DB에서 전부 가져온 경우
+  if (dbHits === allTabs.length) {
+    allTabs.forEach(t => {
+      clearInterval(timers[t]);
+      const container = document.getElementById('tab-' + t);
+      renderAccordion(container, dbResults[t], t);
+    });
+    fullInterpCache = 'db';
+    console.log('✅ DB에서 로드 완료 (API 비용 0원)');
+    return;
+  }
+
+  // DB 부분 적용 + 나머지는 AI로 통합 생성
+  allTabs.forEach(t => {
+    if (dbResults[t]) {
+      clearInterval(timers[t]);
+      const container = document.getElementById('tab-' + t);
+      renderAccordion(container, dbResults[t], t);
+    }
+  });
+
+  // ── 2순위: DB 미스 탭만 AI 호출
+  const missTabs = allTabs.filter(t => !dbResults[t]);
+  if (missTabs.length === 0) { fullInterpCache = 'db'; return; }
+
   try {
     const prompt = buildFullPrompt(currentChart);
     const fullText = await fetchAI(prompt, 5000);
     fullInterpCache = fullText;
-    allTabs.forEach(t => clearInterval(timers[t]));
 
-    // 각 탭에 해당 섹션 렌더링
-    allTabs.forEach(t => {
+    missTabs.forEach(t => {
+      clearInterval(timers[t]);
       const container = document.getElementById('tab-' + t);
       const sectionText = parseSection(fullText, SECTION_MAP[t]);
-      if (sectionText) {
-        renderAccordion(container, sectionText, t);
-      } else {
-        showAIResult(container, '해석을 받아오지 못했습니다.', t);
-      }
+      if (sectionText) renderAccordion(container, sectionText, t);
+      else showAIResult(container, '해석을 받아오지 못했습니다.', t);
     });
+    console.log(`✅ DB ${dbHits}개 + AI ${missTabs.length}개 혼합 로드`);
   } catch(e) {
-    allTabs.forEach(t => {
+    missTabs.forEach(t => {
       clearInterval(timers[t]);
       tabCache[t] = false;
       document.getElementById('tab-'+t).innerHTML =
