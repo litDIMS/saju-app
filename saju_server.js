@@ -87,7 +87,14 @@ const server = http.createServer((req, res) => {
   }
 
   // 정적 파일 서빙
-  let filePath = req.url === '/' ? '/saju_app_local.html' : req.url;
+  const urlPath = req.url.split('?')[0].split('#')[0]; // 파라미터·해시 제거
+  // ads.txt 직접 처리
+  if (urlPath === '/ads.txt') {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end('google.com, pub-7771155449664842, DIRECT, f08c47fec0942fa0\n');
+    return;
+  }
+  let filePath = (urlPath === '/' || urlPath === '') ? '/saju_app_local.html' : urlPath;
   filePath = path.join(__dirname, filePath);
 
   const ext  = path.extname(filePath);
