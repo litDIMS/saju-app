@@ -3,12 +3,37 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>사주명리 — 命</title>
+<title>OR-BIT 오르빗 — 당신의 운명 궤도</title>
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7771155449664842"
      crossorigin="anonymous"></script>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;600;900&family=Noto+Sans+KR:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
 :root {
+  /* ── 오르빗 브랜드 컬러 ── */
+  --midnight: #1A1A2E;        /* Deep Midnight - 배경 */
+  --purple: #4B3077;          /* Mystic Purple - 강조 */
+  --purple-light: #6B4FA7;    /* 보라 밝은버전 */
+  --mint: #00FFD1;            /* Neon Mint - 포인트1 */
+  --mint-dark: #00C4A0;       /* Neon Mint 어두운버전 - 네브 활성 */
+  --mint-dim: rgba(0,255,209,0.15);
+  --yellow: #FFD700;          /* Electric Yellow - 포인트2 */
+  --yellow-dim: rgba(255,215,0,0.15);
+  --starry: #F8F9FA;          /* Starry White - 메인텍스트 */
+  --cosmic: #A0A0C0;          /* Cosmic Gray - 보조텍스트 */
+
+  /* ── 카드/UI 글래스 효과 ── */
+  --card-bg: rgba(255,255,255,0.05);
+  --card-border: rgba(255,255,255,0.1);
+  --card-bg-hover: rgba(255,255,255,0.08);
+
+  /* ── 오행 컬러 (기존 유지) ── */
+  --wood: #4ade80;
+  --fire: #f87171;
+  --earth: #FFD700;
+  --metal: #A0A0C0;
+  --water: #60a5fa;
+
+  /* ── 레거시 변수 매핑 (카드 내부 기준) ── */
   --ink: #1a1410;
   --ink-light: #3d332a;
   --paper: #f5f0e8;
@@ -16,22 +41,17 @@
   --gold: #c9a84c;
   --gold-light: #e8c96a;
   --gold-pale: #f5e9c0;
+  --muted: #8a7e70;
+  --border: rgba(26,20,16,0.12);
   --vermillion: #c0392b;
   --jade: #2d6a4f;
   --jade-light: #40916c;
-  --muted: #8a7e70;
-  --border: rgba(26,20,16,0.12);
-  --wood: #3a7d44;
-  --fire: #c0392b;
-  --earth: #c9a84c;
-  --metal: #7f8c9a;
-  --water: #2471a3;
 }
 * { margin:0; padding:0; box-sizing:border-box; }
 body {
   font-family:'Noto Sans KR',sans-serif;
-  background:var(--paper);
-  color:var(--ink);
+  background:var(--midnight);
+  color:var(--starry);
   min-height:100vh;
   overflow-x:hidden;
 }
@@ -39,8 +59,9 @@ body::before {
   content:'';
   position:fixed; inset:0;
   background-image:
-    radial-gradient(circle at 20% 20%, rgba(201,168,76,0.06) 0%, transparent 50%),
-    radial-gradient(circle at 80% 80%, rgba(192,57,43,0.04) 0%, transparent 50%);
+    radial-gradient(ellipse at 15% 15%, rgba(75,48,119,0.35) 0%, transparent 55%),
+    radial-gradient(ellipse at 85% 85%, rgba(0,255,209,0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 15%, rgba(255,215,0,0.06) 0%, transparent 40%);
   pointer-events:none; z-index:0;
 }
 
@@ -51,7 +72,7 @@ nav {
   padding:0 40px; height:64px;
   background:rgba(245,240,232,0.92);
   backdrop-filter:blur(12px);
-  border-bottom:1px solid var(--border);
+  border-bottom:1px solid rgba(26,20,16,0.12);
 }
 .nav-logo {
   font-family:'Noto Serif KR',serif;
@@ -61,8 +82,9 @@ nav {
 .nav-logo span { color:var(--gold); }
 .nav-logo-sub { font-size:11px; font-weight:300; color:var(--muted); letter-spacing:0.2em; font-family:'Noto Sans KR',sans-serif; }
 .nav-links { display:flex; gap:32px; list-style:none; }
-.nav-links a { font-size:13px; color:var(--ink-light); text-decoration:none; letter-spacing:0.05em; transition:color .2s; cursor:pointer; }
-.nav-links a:hover, .nav-links a.active { color:var(--gold); font-weight:500; }
+.nav-links a { font-size:13px; color:var(--cosmic); text-decoration:none; letter-spacing:0.05em; transition:color .2s; cursor:pointer; }
+.nav-links a:hover { color:#00C4A0; }
+.nav-links a.active { color:#00C4A0; font-weight:600; background:rgba(0,196,160,0.12); padding:4px 10px; border-radius:8px; border:1px solid rgba(0,196,160,0.25); }
 
 /* SCREEN */
 .screen { display:none; position:relative; z-index:1; }
@@ -85,21 +107,22 @@ nav {
 .hero p { font-size:15px; color:var(--muted); line-height:1.8; font-weight:300; letter-spacing:0.03em; animation:fadeUp .8s .2s ease both; }
 
 .input-card {
-  background:rgba(255,255,255,0.7); border:1px solid var(--border);
+  background:rgba(255,255,255,0.04); border:1px solid rgba(75,48,119,0.4);
   border-radius:20px; padding:40px; width:100%; max-width:520px;
-  box-shadow:0 8px 40px rgba(26,20,16,0.08);
+  box-shadow:0 8px 60px rgba(0,0,0,0.4), 0 0 0 1px rgba(0,255,209,0.05);
   animation:fadeUp .8s .3s ease both;
+  backdrop-filter:blur(20px);
 }
-.input-card h2 { font-family:'Noto Serif KR',serif; font-size:18px; font-weight:600; margin-bottom:28px; display:flex; align-items:center; gap:8px; }
+.input-card h2 { font-family:'Noto Serif KR',serif; font-size:18px; font-weight:600; margin-bottom:28px; display:flex; align-items:center; gap:8px; color:var(--starry); }
 .input-card h2::before { content:''; display:inline-block; width:4px; height:18px; background:var(--gold); border-radius:2px; }
 .form-row { display:grid; gap:12px; margin-bottom:16px; }
 .form-row-3 { grid-template-columns:1fr 1fr 1fr; }
 .form-row-2 { grid-template-columns:1fr 1fr; }
 .form-row-1 { grid-template-columns:1fr; }
-.form-group label { display:block; font-size:11px; font-weight:500; color:var(--muted); letter-spacing:0.1em; margin-bottom:7px; }
+.form-group label { display:block; font-size:11px; font-weight:500; color:#A0A0C0; letter-spacing:0.1em; margin-bottom:7px; }
 .form-group input, .form-group select {
   width:100%; padding:11px 14px;
-  background:var(--paper); border:1px solid var(--border);
+  background:#f5f0e8; border:1px solid rgba(26,20,16,0.12);
   border-radius:10px; font-family:'Noto Sans KR',sans-serif;
   font-size:14px; color:var(--ink); outline:none;
   transition:border-color .2s, box-shadow .2s; -webkit-appearance:none;
@@ -109,15 +132,15 @@ nav {
 }
 .gender-toggle { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
 .gender-btn {
-  padding:10px; border:1px solid var(--border); border-radius:10px;
-  background:var(--paper); font-family:'Noto Sans KR',sans-serif;
+  padding:10px; border:1px solid rgba(26,20,16,0.12); border-radius:10px;
+  background:#f5f0e8; font-family:'Noto Sans KR',sans-serif;
   font-size:13px; color:var(--muted); cursor:pointer;
   transition:all .2s; text-align:center;
 }
 .gender-btn.selected { background:var(--gold-pale); border-color:var(--gold); color:var(--ink); font-weight:500; }
-.hint { font-size:11px; color:var(--muted); margin:12px 0 20px; padding:10px 14px; background:rgba(201,168,76,0.06); border-left:2px solid var(--gold); border-radius:0 8px 8px 0; line-height:1.6; }
+.hint { font-size:11px; color:#A0A0C0; margin:12px 0 20px; padding:10px 14px; background:rgba(201,168,76,0.08); border-left:2px solid #c9a84c; border-radius:0 8px 8px 0; line-height:1.6; }
 .btn-main {
-  width:100%; padding:16px; background:var(--ink); color:var(--paper);
+  width:100%; padding:16px; background:var(--ink); color:#f5f0e8;
   border:none; border-radius:12px; font-family:'Noto Serif KR',serif;
   font-size:16px; font-weight:600; letter-spacing:0.1em;
   cursor:pointer; transition:all .25s; position:relative; overflow:hidden;
@@ -128,40 +151,40 @@ nav {
 .btn-main:disabled { opacity:.5; cursor:not-allowed; transform:none; }
 
 /* RESULT */
-#result { padding:90px 40px 80px; max-width:900px; margin:0 auto; }
+#result { padding:90px 40px 80px; max-width:900px; margin:0 auto; background:transparent; }
 .result-header { text-align:center; margin-bottom:48px; animation:fadeUp .6s ease both; }
 .result-header .name-badge { display:inline-block; font-family:'Noto Serif KR',serif; font-size:13px; color:var(--gold); letter-spacing:0.15em; border:1px solid var(--gold); padding:5px 16px; border-radius:20px; margin-bottom:14px; }
 .result-header h1 { font-family:'Noto Serif KR',serif; font-size:28px; font-weight:600; margin-bottom:8px; }
-.result-header p { font-size:13px; color:var(--muted); }
+.result-header p { font-size:13px; color:#A0A0C0; }
 
 .pillars-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:32px; animation:fadeUp .6s .1s ease both; }
 .pillar {
-  background:rgba(255,255,255,0.8); border:1px solid var(--border);
+  background:#ffffff; border:1px solid rgba(26,20,16,0.1);
   border-radius:16px; padding:24px 16px; text-align:center;
   position:relative; overflow:hidden; transition:transform .2s, box-shadow .2s;
 }
-.pillar:hover { transform:translateY(-3px); box-shadow:0 12px 32px rgba(26,20,16,0.1); }
+.pillar:hover { transform:translateY(-3px); box-shadow:0 12px 32px rgba(26,20,16,0.15); }
 .pillar::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; }
 .pillar.year::before  { background:var(--water); }
 .pillar.month::before { background:var(--wood); }
-.pillar.day::before   { background:var(--fire); box-shadow:0 0 0 2px var(--gold); }
+.pillar.day::before   { background:#c0392b; box-shadow:0 0 0 2px #c9a84c; }
 .pillar.hour::before  { background:var(--metal); }
-.pillar-label { font-size:10px; font-weight:500; color:var(--muted); letter-spacing:0.15em; margin-bottom:16px; display:block; }
+.pillar-label { font-size:10px; font-weight:500; color:#8a7e70; letter-spacing:0.15em; margin-bottom:16px; display:block; }
 .pillar-stem { font-family:'Noto Serif KR',serif; font-size:36px; font-weight:900; line-height:1; margin-bottom:4px; }
-.pillar-stem-name { font-size:12px; font-weight:400; color:var(--muted); margin-bottom:16px; }
-.divider-line { width:24px; height:1px; background:var(--border); margin:0 auto 16px; }
+.pillar-stem-name { font-size:12px; font-weight:400; color:#8a7e70; margin-bottom:16px; }
+.divider-line { width:24px; height:1px; background:rgba(26,20,16,0.15); margin:0 auto 16px; }
 .pillar-branch { font-family:'Noto Serif KR',serif; font-size:32px; font-weight:900; line-height:1; margin-bottom:4px; }
-.pillar-branch-name { font-size:12px; color:var(--muted); margin-bottom:12px; }
+.pillar-branch-name { font-size:12px; color:#8a7e70; margin-bottom:12px; }
 .pillar-element-badge { display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:500; padding:3px 10px; border-radius:99px; }
-.el-wood  { background:rgba(58,125,68,0.1);   color:var(--wood); }
-.el-fire  { background:rgba(192,57,43,0.1);   color:var(--fire); }
+.el-wood  { background:rgba(58,125,68,0.1);   color:#3a7d44; }
+.el-fire  { background:rgba(192,57,43,0.1);   color:#c0392b; }
 .el-earth { background:rgba(201,168,76,0.15);  color:#8a6914; }
 .el-metal { background:rgba(127,140,154,0.1);  color:var(--metal); }
-.el-water { background:rgba(36,113,163,0.1);  color:var(--water); }
+.el-water { background:rgba(36,113,163,0.1);  color:#2471a3; }
 
-.section { background:rgba(255,255,255,0.7); border:1px solid var(--border); border-radius:16px; padding:28px; margin-bottom:16px; }
-.section-title { font-family:'Noto Serif KR',serif; font-size:15px; font-weight:600; margin-bottom:20px; display:flex; align-items:center; gap:8px; }
-.section-title .dot { width:6px; height:6px; border-radius:50%; background:var(--gold); }
+.section { background:#ffffff; border:1px solid rgba(26,20,16,0.1); border-radius:16px; padding:28px; margin-bottom:16px; }
+.section-title { font-family:'Noto Serif KR',serif; font-size:15px; font-weight:600; margin-bottom:20px; display:flex; align-items:center; gap:8px; color:#1a1410; }
+.section-title .dot { width:6px; height:6px; border-radius:50%; background:#c9a84c; }
 
 .elements-chart { display:flex; gap:8px; align-items:flex-end; height:100px; margin-bottom:12px; }
 .element-bar-wrap { flex:1; display:flex; flex-direction:column; align-items:center; gap:8px; height:100%; justify-content:flex-end; }
@@ -172,11 +195,11 @@ nav {
 .element-bar.metal { background:var(--metal); }
 .element-bar.water { background:var(--water); }
 
-.yin-yang-bar { height:10px; border-radius:99px; background:var(--paper-warm); overflow:hidden; margin:12px 0 8px; }
+.yin-yang-bar { height:10px; border-radius:99px; background:#ede5d4; overflow:hidden; margin:12px 0 8px; }
 .yin-yang-fill { height:100%; background:linear-gradient(90deg,#c9a84c,#c0392b); border-radius:99px; transition:width 1s ease; }
 
 .ten-gods-wrap { display:flex; flex-wrap:wrap; gap:8px; }
-.ten-god-tag { padding:6px 14px; border-radius:99px; font-size:12px; font-weight:500; border:1px solid; }
+.ten-god-tag { padding:6px 14px; border-radius:99px; font-size:12px; font-weight:600; border:1px solid; cursor:pointer; }
 .tg-bijep   { background:rgba(201,168,76,0.1);   color:#8a6914; border-color:rgba(201,168,76,0.3); }
 .tg-siksang { background:rgba(58,125,68,0.1);    color:var(--wood); border-color:rgba(58,125,68,0.3); }
 .tg-jaesung { background:rgba(192,57,43,0.08);   color:var(--fire); border-color:rgba(192,57,43,0.2); }
@@ -184,8 +207,8 @@ nav {
 .tg-insung  { background:rgba(36,113,163,0.08);  color:var(--water); border-color:rgba(36,113,163,0.2); }
 
 /* TABS */
-.tab-row { display:flex; gap:4px; margin-bottom:16px; background:var(--paper-warm); border-radius:12px; padding:4px; flex-wrap:wrap; }
-.tab-btn { flex:1; min-width:70px; padding:9px 8px; border:none; background:transparent; border-radius:9px; font-family:'Noto Sans KR',sans-serif; font-size:12px; color:var(--muted); cursor:pointer; transition:all .2s; }
+.tab-row { display:flex; gap:4px; margin-bottom:16px; background:#ede5d4; border-radius:12px; padding:4px; flex-wrap:wrap; }
+.tab-btn { flex:1; min-width:70px; padding:9px 8px; border:none; background:transparent; border-radius:9px; font-family:'Noto Sans KR',sans-serif; font-size:12px; color:#8a7e70; cursor:pointer; transition:all .2s; }
 .tab-btn.active { background:white; color:var(--ink); font-weight:500; box-shadow:0 2px 8px rgba(0,0,0,.08); }
 
 .interp-content { display:none; animation:fadeIn .3s ease; }
@@ -194,7 +217,7 @@ nav {
 /* AI 해석 블록 */
 .ai-interp-block {
   padding:24px 26px; background:rgba(255,255,255,0.75);
-  border:1px solid var(--border); border-radius:16px; margin-bottom:14px;
+  border:1px solid rgba(26,20,16,0.1); border-radius:16px; margin-bottom:14px;
   position:relative; overflow:hidden;
 }
 .ai-interp-block::before {
@@ -214,36 +237,36 @@ nav {
 }
 .ai-interp-block .body-text strong { font-weight:500; color:var(--ink); }
 .keyword-wrap { display:flex; flex-wrap:wrap; gap:6px; margin-top:14px; }
-.keyword { font-size:11px; padding:3px 10px; border-radius:99px; background:var(--paper-warm); color:var(--muted); border:1px solid var(--border); }
+.keyword { font-size:11px; padding:3px 10px; border-radius:99px; background:#ede5d4; color:#8a7e70; border:1px solid rgba(26,20,16,0.12); }
 
 /* 스트리밍 커서 */
 .streaming-cursor { display:inline-block; width:2px; height:14px; background:var(--gold); margin-left:2px; animation:blink .7s step-end infinite; vertical-align:middle; }
 @keyframes blink { 50%{opacity:0;} }
 
 /* 로딩 스켈레톤 */
-.skeleton { background:linear-gradient(90deg, var(--paper-warm) 25%, var(--paper) 50%, var(--paper-warm) 75%); background-size:200% 100%; animation:shimmer 1.5s infinite; border-radius:8px; }
+.skeleton { background:linear-gradient(90deg, #ede5d4 25%, #f5f0e8 50%, #ede5d4 75%); background-size:200% 100%; animation:shimmer 1.5s infinite; border-radius:8px; }
 @keyframes shimmer { 0%{background-position:200% 0;} 100%{background-position:-200% 0;} }
 
 /* 대운 */
-.daewoon-timeline { display:flex; gap:0; overflow-x:auto; padding-bottom:8px; }
-.daewoon-item { min-width:90px; border-right:1px solid var(--border); padding:14px; position:relative; cursor:pointer; transition:background .2s; }
+.daewoon-timeline { display:flex; gap:0; overflow-x:auto; padding-bottom:8px; background:#f5f0e8; border-radius:12px; }
+.daewoon-item { min-width:90px; border-right:1px solid rgba(26,20,16,0.1); padding:14px; position:relative; cursor:pointer; transition:background .2s; }
 .daewoon-item:last-child { border-right:none; }
 .daewoon-item:hover { background:rgba(201,168,76,0.05); }
 .daewoon-item.current { background:rgba(201,168,76,0.08); }
 .daewoon-item.current::before { content:'현재'; position:absolute; top:-1px; right:6px; font-size:9px; color:var(--gold); font-weight:500; }
-.daewoon-age { font-size:10px; color:var(--muted); margin-bottom:8px; }
+.daewoon-age { font-size:10px; color:#8a7e70; margin-bottom:8px; }
 .daewoon-chars { font-family:'Noto Serif KR',serif; font-size:20px; font-weight:900; line-height:1.3; color:var(--ink); }
-.daewoon-el { font-size:10px; color:var(--muted); margin-top:6px; }
+.daewoon-el { font-size:10px; color:#8a7e70; margin-top:6px; }
 
 /* LOADING OVERLAY */
 #loading {
-  display:none; position:fixed; inset:0; background:var(--paper); z-index:200;
+  display:none; position:fixed; inset:0; background:#f5f0e8; z-index:200;
   align-items:center; justify-content:center; flex-direction:column; gap:24px;
 }
 #loading.show { display:flex; }
 .loading-symbol { font-family:'Noto Serif KR',serif; font-size:64px; font-weight:900; color:var(--gold); animation:spin 2s linear infinite; }
 @keyframes spin { from{transform:rotate(0deg);} to{transform:rotate(360deg);} }
-.loading-text { font-size:14px; color:var(--muted); letter-spacing:0.1em; }
+.loading-text { font-size:14px; color:var(--cosmic); letter-spacing:0.1em; }
 .loading-sub { font-size:12px; color:var(--muted); opacity:.6; }
 
 @keyframes fadeUp { from{opacity:0;transform:translateY(20px);} to{opacity:1;transform:translateY(0);} }
@@ -359,7 +382,7 @@ nav {
   cursor:pointer; transition:all .2s; text-decoration:none;
 }
 .share-btn-kakao  { background:#FEE500; color:#191919; }
-.share-btn-copy   { background:var(--ink); color:var(--paper); }
+.share-btn-copy   { background:rgba(255,255,255,0.1); color:var(--starry); border:1px solid rgba(255,255,255,0.15); }
 .share-btn-insta  { background:linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888); color:#fff; }
 .share-btn:hover  { transform:translateY(-2px); box-shadow:0 6px 20px rgba(0,0,0,.15); }
 .share-btn svg    { width:18px; height:18px; flex-shrink:0; }
@@ -371,28 +394,28 @@ nav {
   align-items:center; margin-bottom:28px;
 }
 .gunghap-profile-card {
-  background:rgba(255,255,255,.8); border:1px solid var(--border);
+  background:#f5f0e8; border:1px solid rgba(26,20,16,0.12);
   border-radius:16px; padding:20px; text-align:center;
 }
-.gunghap-profile-card h3 { font-family:'Noto Serif KR',serif; font-size:15px; font-weight:600; margin-bottom:6px; }
-.gunghap-profile-card .birth { font-size:12px; color:var(--muted); margin-bottom:12px; }
+.gunghap-profile-card h3 { font-family:'Noto Serif KR',serif; font-size:15px; font-weight:600; margin-bottom:6px; color:#1a1410; }
+.gunghap-profile-card .birth { font-size:12px; color:#8a7e70; margin-bottom:12px; }
 .gunghap-vs {
   font-family:'Noto Serif KR',serif; font-size:28px; font-weight:900;
   color:var(--gold); text-align:center;
 }
 .score-ring {
   width:90px; height:90px; border-radius:50%; margin:0 auto 10px;
-  background:conic-gradient(var(--gold) calc(var(--pct)*1%), var(--paper-warm) 0);
+  background:conic-gradient(var(--gold) calc(var(--pct)*1%), #ede5d4 0);
   display:flex; align-items:center; justify-content:center;
-  box-shadow:0 0 0 6px var(--paper);
+  box-shadow:0 0 0 6px #f5f0e8;
 }
 .score-ring-inner {
   width:68px; height:68px; border-radius:50%;
-  background:var(--paper); display:flex; flex-direction:column;
+  background:#f5f0e8; display:flex; flex-direction:column;
   align-items:center; justify-content:center;
 }
-.score-num { font-family:'Noto Serif KR',serif; font-size:22px; font-weight:900; color:var(--ink); }
-.score-label { font-size:10px; color:var(--muted); }
+.score-num { font-family:'Noto Serif KR',serif; font-size:22px; font-weight:900; color:#1a1410; }
+.score-label { font-size:10px; color:#8a7e70; }
 
 /* 세운 화면 */
 #sewoon { padding:90px 40px 80px; max-width:880px; margin:0 auto; }
@@ -400,14 +423,14 @@ nav {
   display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin-bottom:20px;
 }
 .sewoon-year-btn {
-  padding:10px 6px; border:1px solid var(--border); border-radius:10px;
-  background:var(--paper); font-family:'Noto Sans KR',sans-serif;
+  padding:10px 6px; border:1px solid rgba(26,20,16,0.12); border-radius:10px;
+  background:#f5f0e8; font-family:'Noto Sans KR',sans-serif;
   font-size:12px; cursor:pointer; transition:all .2s; text-align:center;
 }
-.sewoon-year-btn:hover { border-color:var(--gold); background:var(--gold-pale); }
-.sewoon-year-btn.active { background:var(--ink); color:var(--paper); border-color:var(--ink); }
-.sewoon-year-btn .year-num { font-weight:500; display:block; }
-.sewoon-year-btn .year-ganzhi { font-size:10px; color:var(--muted); display:block; margin-top:2px; }
+.sewoon-year-btn:hover { border-color:#c9a84c; background:#f5e9c0; }
+.sewoon-year-btn.active { background:#1a1410; color:#f5f0e8; border-color:#1a1410; }
+.sewoon-year-btn .year-num { font-weight:500; display:block; color:#1a1410; }
+.sewoon-year-btn .year-ganzhi { font-size:10px; color:#8a7e70; display:block; margin-top:2px; }
 .sewoon-year-btn.active .year-ganzhi { color:rgba(255,255,255,.6); }
 
 @media(max-width:768px){
@@ -426,18 +449,19 @@ nav {
 }
 .ai-loading-symbol {
   font-family:'Noto Serif KR',serif; font-size:44px; font-weight:900;
-  color:var(--gold); animation:spinSlow 3s linear infinite;
+  color:var(--mint); animation:spinSlow 3s linear infinite;
+  text-shadow:0 0 20px rgba(0,255,209,0.5);
 }
 @keyframes spinSlow { from{transform:rotate(0deg);} to{transform:rotate(360deg);} }
 .ai-loading-dots { display:flex; gap:8px; }
 .ai-loading-dots span {
-  width:8px; height:8px; border-radius:50%; background:var(--gold); opacity:.3;
+  width:8px; height:8px; border-radius:50%; background:var(--mint); opacity:.3;
   animation:dotPulse 1.2s ease-in-out infinite;
 }
 .ai-loading-dots span:nth-child(2) { animation-delay:.2s; }
 .ai-loading-dots span:nth-child(3) { animation-delay:.4s; }
 @keyframes dotPulse { 0%,100%{opacity:.3;transform:scale(1);} 50%{opacity:1;transform:scale(1.3);} }
-.ai-loading-text { font-size:13px; color:var(--muted); letter-spacing:.05em; }
+.ai-loading-text { font-size:13px; color:#A0A0C0; letter-spacing:.05em; }
 
 /* 해석 결과 등장 애니메이션 */
 .ai-reveal {
@@ -458,43 +482,43 @@ nav {
   animation:fadeIn .2s ease;
 }
 .tg-modal {
-  background:var(--paper); border-radius:20px 20px 0 0;
+  background:#f5f0e8; border-radius:20px 20px 0 0;
   padding:28px 24px 40px; width:100%; max-width:480px;
   animation:slideUp .25s cubic-bezier(.22,1,.36,1);
 }
 @keyframes slideUp { from{transform:translateY(100%);} to{transform:translateY(0);} }
 .tg-modal-handle {
   width:36px; height:4px; border-radius:2px;
-  background:var(--border); margin:0 auto 20px;
+  background:rgba(26,20,16,0.15); margin:0 auto 20px;
 }
 .tg-modal-title {
   font-family:'Noto Serif KR',serif; font-size:20px; font-weight:600;
-  margin-bottom:6px; display:flex; align-items:center; gap:10px;
+  margin-bottom:6px; display:flex; align-items:center; gap:10px; color:#1a1410;
 }
-.tg-modal-subtitle { font-size:13px; color:var(--muted); margin-bottom:16px; }
-.tg-modal-body { font-size:14px; color:var(--ink-light); line-height:1.9; font-weight:300; }
+.tg-modal-subtitle { font-size:13px; color:#8a7e70; margin-bottom:16px; }
+.tg-modal-body { font-size:14px; color:#3d332a; line-height:1.9; font-weight:300; }
 .tg-modal-keywords {
   display:flex; flex-wrap:wrap; gap:6px; margin-top:14px;
-  padding-top:14px; border-top:1px solid var(--border);
+  padding-top:14px; border-top:1px solid rgba(26,20,16,0.12);
 }
 .tg-modal-keyword {
   font-size:11px; padding:3px 10px; border-radius:99px;
-  background:var(--paper-warm); color:var(--muted); border:1px solid var(--border);
+  background:#ede5d4; color:#8a7e70; border:1px solid rgba(26,20,16,0.1);
 }
 
 /* ── 대운 카드 개선 ── */
 .daewoon-card {
-  min-width:130px; border-right:1px solid var(--border);
+  min-width:130px; border-right:1px solid rgba(26,20,16,0.1);
   padding:16px 14px; position:relative; cursor:pointer;
   transition:background .2s; flex-shrink:0;
 }
 .daewoon-card:last-child { border-right:none; }
-.daewoon-card:hover { background:rgba(201,168,76,0.05); }
-.daewoon-card.current { background:rgba(201,168,76,0.08); }
+.daewoon-card:hover { background:rgba(201,168,76,0.06); }
+.daewoon-card.current { background:rgba(201,168,76,0.1); }
 .daewoon-card.current::before {
   content:'대운'; position:absolute; top:6px; right:8px;
-  font-size:9px; color:var(--gold); font-weight:700;
-  background:var(--gold-pale); padding:2px 9px; border-radius:99px;
+  font-size:9px; color:#c9a84c; font-weight:700;
+  background:rgba(201,168,76,0.12); padding:2px 9px; border-radius:99px;
   border:1px solid rgba(201,168,76,0.4); letter-spacing:0.05em;
 }
 .daewoon-period-desc {
@@ -512,41 +536,41 @@ nav {
   animation:fadeIn .2s ease;
 }
 .dw-modal {
-  background:var(--paper); border-radius:20px 20px 0 0;
+  background:#f5f0e8; border-radius:20px 20px 0 0;
   padding:28px 24px 44px; width:100%; max-width:480px;
   animation:slideUp .25s cubic-bezier(.22,1,.36,1);
 }
 .dw-modal-handle {
   width:36px; height:4px; border-radius:2px;
-  background:var(--border); margin:0 auto 20px;
+  background:rgba(26,20,16,0.15); margin:0 auto 20px;
 }
 .dw-modal-period {
-  font-size:11px; color:var(--muted); letter-spacing:.1em; margin-bottom:6px;
+  font-size:11px; color:#8a7e70; letter-spacing:.1em; margin-bottom:6px;
 }
 .dw-modal-title {
   font-family:'Noto Serif KR',serif; font-size:19px; font-weight:600;
-  margin-bottom:4px; color:var(--ink);
+  margin-bottom:4px; color:#1a1410;
 }
 .dw-modal-ganzhi {
-  font-size:13px; color:var(--muted); margin-bottom:16px;
+  font-size:13px; color:#8a7e70; margin-bottom:16px;
 }
 .dw-modal-body {
-  font-size:14px; color:var(--ink-light); line-height:1.9; font-weight:300;
+  font-size:14px; color:#3d332a; line-height:1.9; font-weight:300;
 }
 .dw-modal-el-row {
   display:flex; gap:6px; margin-top:14px; padding-top:14px;
-  border-top:1px solid var(--border); flex-wrap:wrap;
+  border-top:1px solid rgba(26,20,16,0.1); flex-wrap:wrap;
 }
-.daewoon-age-range { font-size:10px; color:var(--muted); margin-bottom:4px; }
+.daewoon-age-range { font-size:10px; color:#8a7e70; margin-bottom:4px; }
 .daewoon-age-label {
-  font-size:12px; font-weight:500; color:var(--ink);
+  font-size:12px; font-weight:500; color:#1a1410;
   margin-bottom:8px;
 }
 .daewoon-ganzhi {
   font-family:'Noto Serif KR',serif; font-size:22px; font-weight:900;
-  color:var(--ink); margin-bottom:4px; letter-spacing:.05em;
+  color:#1a1410; margin-bottom:4px; letter-spacing:.05em;
 }
-.daewoon-card.current .daewoon-ganzhi { color:var(--gold); }
+.daewoon-card.current .daewoon-ganzhi { color:#c9a84c; }
 .daewoon-el-row {
   display:flex; gap:4px; flex-wrap:wrap; margin-top:6px;
 }
@@ -630,11 +654,11 @@ nav {
   pointer-events:none; opacity:0; transition:opacity .4s;
 }
 .scroll-hint.show { opacity:1; }
-.scroll-hint-text { font-size:11px; color:var(--gold); font-weight:500; letter-spacing:.05em; }
+.scroll-hint-text { font-size:11px; color:var(--mint); font-weight:500; letter-spacing:.05em; }
 .scroll-hint-arrow {
   width:32px; height:32px; border-radius:50%;
-  background:var(--gold); display:flex; align-items:center; justify-content:center;
-  box-shadow:0 4px 16px rgba(201,168,76,0.4);
+  background:var(--mint); display:flex; align-items:center; justify-content:center;
+  box-shadow:0 4px 16px rgba(0,255,209,0.4);
 }
 .scroll-hint-arrow svg { width:16px; height:16px; fill:white; }
 @keyframes hintBounce {
@@ -644,7 +668,7 @@ nav {
 
 /* ── 섹션 카드 아코디언 ── */
 .section-card {
-  border:1px solid var(--border);
+  border:1px solid rgba(26,20,16,0.1);
   border-radius:14px;
   overflow:hidden;
   margin-bottom:10px;
@@ -662,23 +686,23 @@ nav {
 .section-card-title-text {
   font-family:'Noto Serif KR',serif;
   font-size:15px; font-weight:600;
-  color:var(--ink); line-height:1.4;
+  color:#1a1410; line-height:1.4;
   flex:1; text-align:left;
 }
 .section-card-icon {
   width:28px; height:28px; border-radius:50%;
-  background:var(--gold-pale); color:var(--gold);
+  background:var(--gold-pale,#f5e9c0); color:#c9a84c;
   display:flex; align-items:center; justify-content:center;
   font-size:13px; flex-shrink:0;
   transition:background .2s, color .2s;
 }
 .section-card.opened .section-card-icon {
-  background:var(--ink); color:var(--paper);
+  background:#1a1410; color:#f5f0e8;
 }
 .section-card-body {
   display:none;
   padding:0 20px 20px;
-  font-size:14px; color:var(--ink-light);
+  font-size:14px; color:#3d332a;
   line-height:1.95; font-weight:300;
   animation:fadeIn .3s ease;
 }
@@ -686,7 +710,7 @@ nav {
 
 /* 첫 카드는 기본 열림 */
 .section-card.default-open .section-card-body { display:block; }
-.section-card.default-open .section-card-icon { background:var(--ink); color:var(--paper); }
+.section-card.default-open .section-card-icon { background:#1a1410; color:#f5f0e8; }
 
 @media(max-width:768px){
   .section-card-title { padding:15px 16px; }
@@ -696,24 +720,24 @@ nav {
 
 /* ── 궁합 추천 / 부족 기운 섹션 ── */
 .compat-section {
-  background:rgba(255,255,255,0.7); border:1px solid var(--border);
+  background:#f5f0e8; border:1px solid rgba(26,20,16,0.1);
   border-radius:16px; padding:24px; margin-bottom:16px;
 }
 .compat-title {
   font-family:'Noto Serif KR',serif; font-size:15px; font-weight:600;
-  margin-bottom:16px; display:flex; align-items:center; gap:8px;
+  margin-bottom:16px; display:flex; align-items:center; gap:8px; color:#1a1410;
 }
-.compat-dot { width:6px; height:6px; border-radius:50%; background:var(--gold); }
+.compat-dot { width:6px; height:6px; border-radius:50%; background:#c9a84c; }
 
 .compat-card-row { display:flex; gap:10px; flex-wrap:wrap; }
 .compat-card {
   flex:1; min-width:140px;
-  background:var(--paper); border:1px solid var(--border);
+  background:rgba(255,255,255,0.7); border:1px solid rgba(26,20,16,0.1);
   border-radius:12px; padding:14px 16px;
 }
 .compat-card-emoji { font-size:20px; margin-bottom:8px; }
-.compat-card-title { font-size:13px; font-weight:500; color:var(--ink); margin-bottom:4px; }
-.compat-card-desc { font-size:12px; color:var(--muted); line-height:1.6; }
+.compat-card-title { font-size:13px; font-weight:500; color:#1a1410; margin-bottom:4px; }
+.compat-card-desc { font-size:12px; color:#8a7e70; line-height:1.6; }
 
 .good-compat { border-left:3px solid #3a7d44; }
 .bad-compat  { border-left:3px solid #c0392b; }
@@ -732,7 +756,7 @@ nav {
   border-radius:99px; letter-spacing:0.05em;
 }
 .energy-tip-luna {
-  font-size:13px; color:var(--ink-light); line-height:1.8;
+  font-size:13px; color:#3d332a; line-height:1.8;
   font-style:italic; margin-bottom:10px;
   padding:10px 14px;
   background:rgba(255,255,255,0.6);
@@ -743,8 +767,8 @@ nav {
 }
 .energy-tip-item {
   font-size:11px; padding:4px 12px; border-radius:99px;
-  background:var(--paper-warm); color:var(--ink-light);
-  border:1px solid var(--border);
+  background:#ede5d4; color:#3d332a;
+  border:1px solid rgba(26,20,16,0.1);
 }
 
 @media(max-width:768px){
@@ -756,7 +780,20 @@ nav {
 <body>
 
 <nav>
-  <div class="nav-logo"><span>命</span>사주명리<span class="nav-logo-sub">SAJU</span></div>
+  <div class="nav-logo" onclick="showScreen('home')" style="cursor:pointer;display:flex;align-items:center;gap:10px;">
+    <svg width="32" height="32" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <!-- 행성 궤도 링 -->
+      <ellipse cx="50" cy="58" rx="46" ry="18" stroke="#4B3077" stroke-width="7" fill="none" transform="rotate(-18 50 58)"/>
+      <!-- 행성 본체 (C자형 원호) -->
+      <path d="M 75 25 A 32 32 0 1 0 78 65" stroke="#4B3077" stroke-width="9" fill="none" stroke-linecap="round"/>
+      <!-- 4각별 -->
+      <path d="M78 18 L80 28 L90 30 L80 32 L78 42 L76 32 L66 30 L76 28 Z" fill="#4B3077"/>
+    </svg>
+    <div style="display:flex;flex-direction:column;gap:1px;">
+      <div style="font-family:'Noto Sans KR',sans-serif;font-size:17px;font-weight:700;letter-spacing:0.2em;color:#F8F9FA;line-height:1;">OR-BIT</div>
+      <div style="font-size:9px;color:#A0A0C0;letter-spacing:0.25em;font-weight:300;">오르빗 · 당신의 운명 궤도</div>
+    </div>
+  </div>
   <ul class="nav-links">
     <li><a class="active" onclick="showScreen('home')">사주보기</a></li>
     <li><a onclick="if(currentChart)showScreen('result')">결과</a></li>
@@ -783,9 +820,17 @@ nav {
 <div id="home" class="screen active">
   <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:100px 40px 60px;">
     <div class="hero">
-      <div class="hero-symbol">命</div>
-      <h1>당신의 사주를 읽습니다</h1>
-      <p>생년월일시로 사주 원국을 세우고<br>오행의 기운과 운명의 흐름을 풀어드립니다</p>
+      <div class="hero-symbol">
+        <svg width="110" height="110" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <ellipse cx="50" cy="58" rx="46" ry="18" stroke="#4B3077" stroke-width="6" fill="none" transform="rotate(-18 50 58)"/>
+          <path d="M 75 25 A 32 32 0 1 0 78 65" stroke="#4B3077" stroke-width="8" fill="none" stroke-linecap="round"/>
+          <path d="M78 18 L80 28 L90 30 L80 32 L78 42 L76 32 L66 30 L76 28 Z" fill="#FFD700"/>
+          <!-- 민트 글로우 -->
+          <ellipse cx="50" cy="58" rx="46" ry="18" stroke="#00FFD1" stroke-width="1" fill="none" transform="rotate(-18 50 58)" opacity="0.3"/>
+        </svg>
+      </div>
+      <h1 style="color:var(--starry);font-size:22px;line-height:1.5;">당신의 운명 궤도를<br><span style="background:linear-gradient(90deg,#00FFD1,#FFD700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">오르빗의 마스코트!</span><br><span style="color:var(--starry);font-size:20px;">마법 고양이 루나<span style="color:#FFD700;">Luna</span>가 읽어 드릴게요</span></h1>
+      <p style="color:var(--cosmic);">생년월일시를 알려주면 루나가 사주원국을 분석해서<br>당신의 라이프궤도를 보여줄게옹 🐱</p>
     </div>
     <div class="input-card">
       <h2>생년월일 입력</h2>
@@ -853,13 +898,13 @@ nav {
       <div class="section">
         <div class="section-title"><span class="dot"></span>음양 · 일간 강약</div>
         <div style="margin-bottom:16px;">
-          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:6px;">
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:#8a7e70;margin-bottom:6px);">
             <span id="yang-label">양 (陽)</span><span id="yin-label">음 (陰)</span>
           </div>
           <div class="yin-yang-bar"><div class="yin-yang-fill" id="yin-yang-fill" style="width:50%"></div></div>
-          <div style="font-size:11px;color:var(--gold);text-align:center;" id="yinyang-desc">—</div>
+          <div style="font-size:11px;color:#c9a84c;text-align:center;" id="yinyang-desc">—</div>
         </div>
-        <div style="font-size:11px;color:var(--muted);margin-bottom:10px;">주요 십성</div>
+        <div style="font-size:11px;color:#8a7e70;margin-bottom:10px;">주요 십성</div>
         <div class="ten-gods-wrap" id="ten-gods-wrap"></div>
       </div>
     </div>
@@ -917,15 +962,15 @@ nav {
       </button>
     </div>
     <div style="display:flex;gap:12px;justify-content:center;margin-top:12px;flex-wrap:wrap;">
-      <button class="share-btn" style="background:var(--gold-pale);color:var(--ink);" onclick="showScreen('sewoon')">
+      <button class="share-btn" style="background:rgba(0,255,209,0.1);color:var(--mint);border:1px solid rgba(0,255,209,0.25);" onclick="showScreen('sewoon')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
         세운·년운 보기
       </button>
-      <button class="share-btn" style="background:var(--gold-pale);color:var(--ink);" onclick="showScreen('gunghap')">
+      <button class="share-btn" style="background:rgba(255,215,0,0.1);color:var(--yellow);border:1px solid rgba(255,215,0,0.25);" onclick="showScreen('gunghap')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
         궁합 보기
       </button>
-      <button class="share-btn" style="background:var(--paper-warm);color:var(--ink);" onclick="showScreen('home')">
+      <button class="share-btn" style="background:rgba(255,255,255,0.08);color:var(--cosmic);" onclick="showScreen('home')">
         다시 입력하기
       </button>
     </div>
@@ -954,20 +999,20 @@ nav {
         <div class="birth">상대방 정보를 입력해주세요</div>
         <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px;">
           <div style="display:flex;gap:6px;">
-            <input type="text" id="g-name" placeholder="이름 (선택)" style="flex:1;padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--paper);font-family:'Noto Sans KR',sans-serif;">
+            <input type="text" id="g-name" placeholder="이름 (선택)" style="flex:1;padding:8px 10px;border:1px solid rgba(26,20,16,0.12);border-radius:8px;font-size:13px;background:#f5f0e8;font-family:'Noto Sans KR',sans-serif;">
           </div>
           <div style="display:flex;gap:6px;">
-            <input type="number" id="g-year" placeholder="년도" style="width:70px;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--paper);text-align:center;">
-            <select id="g-month" style="flex:1;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:var(--paper);">
+            <input type="number" id="g-year" placeholder="년도" style="width:70px;padding:8px;border:1px solid rgba(26,20,16,0.12);border-radius:8px;font-size:13px;background:#f5f0e8;text-align:center;">
+            <select id="g-month" style="flex:1;padding:8px;border:1px solid rgba(26,20,16,0.12);border-radius:8px;font-size:12px;background:#f5f0e8;">
               <option value="1">1월</option><option value="2">2월</option><option value="3">3월</option>
               <option value="4">4월</option><option value="5">5월</option><option value="6">6월</option>
               <option value="7">7월</option><option value="8">8월</option><option value="9">9월</option>
               <option value="10">10월</option><option value="11">11월</option><option value="12">12월</option>
             </select>
-            <input type="number" id="g-day" placeholder="일" style="width:50px;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--paper);text-align:center;">
+            <input type="number" id="g-day" placeholder="일" style="width:50px;padding:8px;border:1px solid rgba(26,20,16,0.12);border-radius:8px;font-size:13px;background:#f5f0e8;text-align:center;">
           </div>
           <div style="display:flex;gap:6px;">
-            <select id="g-hour" style="flex:1;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:12px;background:var(--paper);">
+            <select id="g-hour" style="flex:1;padding:8px;border:1px solid rgba(26,20,16,0.12);border-radius:8px;font-size:12px;background:#f5f0e8;">
               <option value="">시간 모름</option>
               <option value="0">子時 23~01시</option><option value="2">丑時 01~03시</option>
               <option value="4">寅時 03~05시</option><option value="6">卯時 05~07시</option>
@@ -1001,7 +1046,7 @@ nav {
             </div>
           </div>
           <div>
-            <div class="score-ring" id="score-ring-love" style="--pct:80;background:conic-gradient(var(--fire) calc(var(--pct)*1%), var(--paper-warm) 0)">
+            <div class="score-ring" id="score-ring-love" style="--pct:80;background:conic-gradient(var(--fire) calc(var(--pct)*1%), #ede5d4 0)">
               <div class="score-ring-inner">
                 <span class="score-num" id="score-love">80</span>
                 <span class="score-label">연애</span>
@@ -1009,7 +1054,7 @@ nav {
             </div>
           </div>
           <div>
-            <div class="score-ring" id="score-ring-friend" style="--pct:70;background:conic-gradient(var(--water) calc(var(--pct)*1%), var(--paper-warm) 0)">
+            <div class="score-ring" id="score-ring-friend" style="--pct:70;background:conic-gradient(var(--water) calc(var(--pct)*1%), #ede5d4 0)">
               <div class="score-ring-inner">
                 <span class="score-num" id="score-friend">70</span>
                 <span class="score-label">우정</span>
@@ -1047,7 +1092,7 @@ nav {
     </div>
 
     <div style="text-align:center;margin-top:20px;">
-      <button class="share-btn" style="background:var(--paper-warm);color:var(--ink);" onclick="showScreen('result')">← 내 사주로 돌아가기</button>
+      <button class="share-btn" style="background:rgba(255,255,255,0.08);color:var(--cosmic);" onclick="showScreen('result')">← 내 사주로 돌아가기</button>
     </div>
   </div>
 </div>
@@ -1099,7 +1144,7 @@ nav {
     </div>
 
     <div style="text-align:center;margin-top:20px;">
-      <button class="share-btn" style="background:var(--paper-warm);color:var(--ink);" onclick="showScreen('result')">← 내 사주로 돌아가기</button>
+      <button class="share-btn" style="background:rgba(255,255,255,0.08);color:var(--cosmic);" onclick="showScreen('result')">← 내 사주로 돌아가기</button>
     </div>
   </div>
 </div>
@@ -1545,7 +1590,7 @@ function renderResult(chart) {
   // 대운
   const currentYear = new Date().getFullYear();
   const currentAge = currentYear - chart.year;
-  const EL_COLOR_MAP = {목:'var(--wood)',화:'var(--fire)',토:'#b8861c',금:'var(--metal)',수:'var(--water)'};
+  const EL_COLOR_MAP = {목:'#3a7d44',화:'#c0392b',토:'#b8861c',금:'#7f8c9a',수:'#2471a3'};
   // 대운 설명 데이터
   const DW_DESC = {
     목: {
@@ -1589,7 +1634,7 @@ function renderResult(chart) {
       <div class="daewoon-ganzhi">${dw.stem.cn}${dw.branch.cn}</div>
       <div style="font-size:10px;color:var(--muted);margin-bottom:8px;">${dw.stem.kr}${dw.branch.kr}</div>
       <div style="font-size:11px;font-weight:500;color:${EL_COLOR_MAP[mainEl]};line-height:1.4;margin-bottom:4px;">${desc.title}</div>
-      <div style="font-size:9px;color:var(--muted);letter-spacing:0.05em;">탭해서 자세히 보기 →</div>
+      <div style="font-size:9px;color:#A0A0C0;letter-spacing:0.05em;">탭해서 자세히 보기 →</div>
     </div>`;
   }).join('');
 
@@ -1973,7 +2018,12 @@ async function loadAllInterpretations() {
       clearInterval(timers[t]);
       tabCache[t] = false;
       document.getElementById('tab-'+t).innerHTML =
-        `<div class="ai-interp-block"><div class="body-text" style="color:var(--muted);">⚠️ 해석 오류. 탭을 다시 클릭해주세요.<br><small>${e.message}</small></div></div>`;
+        `<div class="ai-interp-block"><div class="body-text" style="color:#C0C0D8;text-align:center;padding:20px 0;">
+          <div style="font-size:28px;margin-bottom:12px;">🐱</div>
+          <div style="font-size:14px;color:#F8F9FA;margin-bottom:8px;">루나가 잠시 자리를 비웠다옹...</div>
+          <div style="font-size:12px;color:#A0A0C0;margin-bottom:16px;">탭을 다시 클릭하면 재시도한다옹!</div>
+          <small style="opacity:.4;font-size:10px;">${e.message}</small>
+        </div></div>`;
     });
   }
 }
@@ -2014,7 +2064,7 @@ function appendKeywords(category, text, container) {
     .filter(k => k.length >= 2 && k.length <= 8)
     .slice(0, 8);
   if (keywords.length > 0) {
-    const kwHtml = '<div class="keyword-wrap" style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border);">'
+    const kwHtml = '<div class="keyword-wrap" style="margin-top:16px;padding-top:14px;border-top:1px solid rgba(26,20,16,0.12);">'
       + keywords.map(k => '<span class="keyword">' + k + '</span>').join('')
       + '</div>';
     container.insertAdjacentHTML('beforeend', kwHtml);
@@ -2082,7 +2132,7 @@ const TEN_GOD_DB = {
   '편관': {
     name: '압박을 이기는 에너지',
     badge: '편관 偏官',
-    emoji: '⚔️',
+    emoji: '🗡',
     cls: 'tg-gwansung',
     luna: '이 에너지 가진 사람은옹~ 위기가 와야 진짜 실력이 나온다옹! 평소엔 잠자는 사자 같은 타입이라옹.',
     desc: `**위기에서 오히려 강해지는 역전 DNA**\n이 에너지가 있으면 압박받을수록 더 단단해지는 경향이 있어. 데드라인 직전, 아무도 못 한다는 상황, 혼자 다 감당해야 할 때 — 그때 진짜 실력이 나와. 평화로울 때는 좀 루즈해 보이다가, 위기 상황에서 갑자기 리더가 되는 타입.\n\n**높은 곳을 향한 야망과 추진력**\n현재 위치에 안주하지 않아. 더 높은 곳, 더 큰 무대를 항상 염두에 두고 있어. 이 에너지가 잘 발휘되면 진짜 큰 그림을 그리는 사람이 돼. 근데 방향 잡기 전에는 에너지가 충돌이나 갈등으로 튀어나올 수 있어.\n\n**이 에너지를 어떻게 쓰느냐가 핵심**\n다스리면 카리스마 리더, 못 다스리면 충동적인 결정이 반복돼. 내 안의 이 강한 에너지를 목표 하나에 집중시키면 진짜 무서운 사람이 될 수 있어.`,
@@ -2091,7 +2141,7 @@ const TEN_GOD_DB = {
   '정관': {
     name: '원칙을 지키는 에너지',
     badge: '정관 正官',
-    emoji: '🎖️',
+    emoji: '🏅',
     cls: 'tg-gwansung',
     luna: '이 에너지 있으면 주변에서 믿고 따른다옹~ 공정하고 반듯한 게 매력이라옹!',
     desc: `**규칙과 질서가 편안한 타입**\n이 에너지가 있으면 "이건 원래 이렇게 해야 해"가 자연스럽게 나와. 규칙 지키는 게 당연하고, 불공정한 상황에 예민하게 반응해. 줄 서다가 새치기하는 사람 보면 진짜 눈에 힘 들어가는 스타일.\n\n**맡으면 끝까지 하는 책임감**\n한번 책임지겠다고 한 건 웬만하면 끝까지 해. 힘들어도 "내가 한다고 했으니까"가 버티게 하는 원동력이야. 이 덕분에 직장이나 단체에서 신뢰받는 위치에 있을 때가 많아.\n\n**체면과 명예를 중시하는 마음**\n남들한테 어떻게 보이는지 신경 써. 이게 자기 관리로 연결되면 강점이야. 근데 너무 체면 차리다 보면 정작 하고 싶은 말 못 하는 경우도 생겨. 원칙 안에서도 유연함이 필요할 때가 있어.`,
@@ -2153,7 +2203,7 @@ function renderCompatAndEnergy(chart) {
     토: {
       good: [
         { emoji:'🔥', title:'화(火) 일간', desc:'화가 토를 따뜻하게 만들어주는 조합이라옹! 적극적인 화 일간이 나를 밀어줘.' },
-        { emoji:'⚙️', title:'금(金) 일간', desc:'토에서 금이 나오는 관계라옹. 내가 키워주면 상대가 결실을 맺는 찰떡 케미.' },
+        { emoji:'🔩', title:'금(金) 일간', desc:'토에서 금이 나오는 관계라옹. 내가 키워주면 상대가 결실을 맺는 찰떡 케미.' },
       ],
       bad: [
         { emoji:'🌿', title:'목(木) 일간', desc:'나무가 흙을 파고드는 관계라옹. 서로 방향이 달라 오래 지내면 피로감이 쌓일 수 있어.' },
@@ -2170,7 +2220,7 @@ function renderCompatAndEnergy(chart) {
     },
     수: {
       good: [
-        { emoji:'⚙️', title:'금(金) 일간', desc:'금에서 물이 나오는 관계라옹! 금 일간이 나를 채워주는 귀인 같은 존재야.' },
+        { emoji:'🔩', title:'금(金) 일간', desc:'금에서 물이 나오는 관계라옹! 금 일간이 나를 채워주는 귀인 같은 존재야.' },
         { emoji:'🌿', title:'목(木) 일간', desc:'물이 나무를 키우듯 내가 상대를 성장시키는 관계라옹. 뿌듯함을 느낄 수 있어.' },
       ],
       bad: [
@@ -2206,7 +2256,7 @@ function renderCompatAndEnergy(chart) {
       areas: ['경복궁·인사동 주변 (고즈넉한 토의 기운)', '북촌·서촌 (오래된 땅의 기운)', '남한산성·수원화성 인근'],
     },
     금: {
-      badge: '⚙️ 금(金) 기운',
+      badge: '🔩 금(金) 기운',
       badgeColor: '#7f8c9a',
       luna: '금 기운이 부족하면 결단력이 흐려지거나, 마무리가 약해지는 느낌이 들 수 있다옹. 예리하고 깔끔한 금의 에너지를 보충해야 해라옹!',
       places: ['도심 속 세련된 공간', '현대미술관·갤러리', '정돈된 미니멀 카페나 호텔 로비'],
@@ -2406,7 +2456,7 @@ async function fetchAI(prompt, maxTokens) {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({
-      model: 'claude-sonnet-4-6',
+      model: 'claude-sonnet-4-5',
       max_tokens: maxTokens || 4000,
       stream: true,
       messages: [{ role: 'user', content: prompt }]
@@ -3102,9 +3152,9 @@ function switchSewoonTab(name, btn) {
 
 </script>
 <script>window.addEventListener("load",checkShareParams);</script>
-<div style="text-align:center;padding:24px 20px;font-size:12px;color:#8a7e70;border-top:1px solid rgba(26,20,16,0.08);">
+<div style="text-align:center;padding:24px 20px;font-size:12px;color:#A0A0C0;border-top:1px solid rgba(255,255,255,0.08);">
   © 2026 사주명리 命 &nbsp;·&nbsp;
-  <a href="/privacy.html" style="color:#c9a84c;text-decoration:none;">개인정보처리방침</a>
+  <a href="/privacy.html" style="color:#00FFD1;text-decoration:none;">개인정보처리방침</a>
   &nbsp;·&nbsp; 본 서비스는 참고용 콘텐츠로 법적 효력이 없습니다.
 </div>
 </body>

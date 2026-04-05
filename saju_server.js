@@ -31,6 +31,18 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // ── 정적 이미지 파일 서빙 (luna.png 등)
+  if (req.method === 'GET' && req.url === '/luna.png') {
+    const imgPath = path.join(__dirname, 'luna.png');
+    if (fs.existsSync(imgPath)) {
+      res.writeHead(200, { 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=86400' });
+      fs.createReadStream(imgPath).pipe(res);
+    } else {
+      res.writeHead(404); res.end('Not found');
+    }
+    return;
+  }
+
   // ── /api/interpret → 사전 생성 해석 조회
   if (req.method === 'POST' && req.url === '/api/interpret') {
     let body = '';
@@ -77,7 +89,7 @@ const server = http.createServer((req, res) => {
         return;
       }
 
-      parsed.model = 'claude-sonnet-4-6';
+      parsed.model = 'claude-sonnet-4-5';
       const finalBody = JSON.stringify(parsed);
 
       const options = {
