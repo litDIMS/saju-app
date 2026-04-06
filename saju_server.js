@@ -80,7 +80,7 @@ function loadDBToCache() {
       count++;
     }
   }
-  if (count > 0) console.log(\`✅ DB → 메모리 캐시 로드: \${count}개\`);
+  if (count > 0) console.log(`✅ DB → 메모리 캐시 로드: ${count}개`);
 }
 const DB_FILE = path.join(__dirname, 'saju_data.json');
 if (fs.existsSync(DB_FILE)) {
@@ -287,7 +287,7 @@ const server = http.createServer((req, res) => {
         SAJU_DB[dayPillar][category] = text;
         fs.writeFile(DB_FILE, JSON.stringify(SAJU_DB, null, 2), (err) => {
           if (err) console.error('[DB 저장 실패]', err);
-          else console.log(\`[DB 저장] \${dayPillar} / \${category}\`);
+          else console.log(`[DB 저장] ${dayPillar} / ${category}`);
         });
         
         res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
@@ -349,7 +349,7 @@ const server = http.createServer((req, res) => {
         }
         user.stars = Math.max(0, (user.stars || 0) + amount);
         saveUsers();
-        console.log(\`[관리자] 별 조정: \${user.nickname} \${amount > 0 ? '+' : ''}\${amount}별 (사유: \${reason})\`);
+        console.log(`[관리자] 별 조정: ${user.nickname} ${amount > 0 ? '+' : ''}${amount}별 (사유: ${reason})`);
         res.writeHead(200, {'Content-Type':'application/json','Access-Control-Allow-Origin':'*'});
         res.end(JSON.stringify({ok:true, stars: user.stars}));
       } catch(e) { res.writeHead(400); res.end('Bad Request'); }
