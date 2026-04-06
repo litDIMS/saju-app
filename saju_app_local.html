@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>사주명리 — 命</title>
+<script src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.2/kakao.min.js" crossorigin="anonymous"></script>
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7771155449664842"
      crossorigin="anonymous"></script>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;600;900&family=Noto+Sans+KR:wght@300;400;500&display=swap" rel="stylesheet">
@@ -2637,44 +2638,139 @@ function copyShareLink() {
 }
 
 function shareKakao() {
-  const url = buildShareUrl();
-  const text = `${currentChart.name || ''}의 사주 궁합을 확인해보세요! 생년월일을 입력하면 우리 궁합을 볼 수 있어요 ❤`;
-  // 카카오 SDK 없이 공유 URL 방식
-  const kakaoUrl = `https://sharer.kakao.com/talk/friends/picker/link?app_key=&link_ver=4.0&template_id=&url=${encodeURIComponent(url)}`;
-  // 링크 복사 방식으로 폴백
-  copyShareLink();
+  if (!currentChart) return;
+
+  const shareUrl = buildShareUrl();
+  const name = currentChart.name || '친구';
+  const dayPillar = currentChart.dp.stem.kr + currentChart.dp.branch.kr;
+  const description = `${name}님의 일주는 ${dayPillar}(${currentChart.dp.stem.el})이에요. 생년월일을 입력하면 두 사람의 사주 궁합을 바로 확인할 수 있어요!`;
+
+  // 카카오 SDK 사용
+  if (window.Kakao) {
+    if (!Kakao.isInitialized()) {
+      Kakao.init('YOUR_KAKAO_APP_KEY'); // 카카오 앱 키 입력 필요
+    }
+    try {
+      Kakao.Share.sendDefault({
+        objectType: 'feed',
+        content: {
+          title: `${name}님의 사주와 당신의 궁합을 확인해보세요!`,
+          description: description,
+          imageUrl: 'https://4ju.kr/Luna.png',
+          link: {
+            mobileWebUrl: shareUrl,
+            webUrl: shareUrl,
+          },
+        },
+        buttons: [
+          {
+            title: '내 사주도 보기',
+            link: { mobileWebUrl: shareUrl, webUrl: shareUrl },
+          },
+        ],
+      });
+      return;
+    } catch(e) {
+      console.log('카카오 SDK 오류, 폴백:', e.message);
+    }
+  }
+
+  // 폴백: 카카오 앱스킴으로 직접 열기 (모바일)
+  const kakaoMsg = encodeURIComponent(`${name}님의 사주와 당신의 사주 궁합을 확인해보세요!\n\n${shareUrl}`);
+  const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+  const isAndroid = /Android/.test(navigator.userAgent);
+
+  if (isIOS || isAndroid) {
+    // 카카오톡 앱 실행 (URL 스킴)
+    const kakaoAppUrl = `kakaotalk://msg/send?text=${kakaoMsg}`;
+    window.location.href = kakaoAppUrl;
+    // 앱 없으면 링크 복사로 폴백
+    setTimeout(() => copyShareLink(), 1500);
+  } else {
+    copyShareLink();
+  }
 }
 
 async function shareInsta() {
   if (!currentChart) return;
-  // Canvas로 스토리 이미지 생성
-  const canvas = await generateStoryImage(currentChart);
-  const blob = await new Promise(r => canvas.toBlob(r, 'image/png'));
-  const file = new File([blob], 'saju-story.png', { type: 'image/png' });
 
-  // 모바일: navigator.share로 공유 시트 열기
-  if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-    try {
+  // 로딩 표시
+  const btn = event?.target?.closest('button');
+  const origText = btn ? btn.innerHTML : '';
+  if (btn) btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;animation:spin 1s linear infinite"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83"/></svg> 생성 중...';
+
+  try {
+    // Canvas로 스토리 이미지 생성
+    const canvas = await generateStoryImage(currentChart);
+    const blob = await new Promise(r => canvas.toBlob(r, 'image/png', 0.95));
+    const file = new File([blob], 'orbit-saju-story.png', { type: 'image/png' });
+
+    const isIOS     = /iPhone|iPad|iPod/.test(navigator.userAgent);
+    const isAndroid = /Android/.test(navigator.userAgent);
+    const isMobile  = isIOS || isAndroid;
+
+    // ① 모바일 Web Share API (파일 공유 지원 시)
+    if (isMobile && navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+      if (btn) btn.innerHTML = origText;
       await navigator.share({
         files: [file],
-        title: '내 사주 이야기',
-        text: '사주명리로 본 나의 운명 ✨',
+        title: 'ORBIT 사주',
+        text: '나의 사주 분석 결과 · ORBIT 오르빗',
       });
       return;
-    } catch(e) {
-      if (e.name === 'AbortError') return; // 사용자가 취소
     }
-  }
 
-  // PC 폴백: 이미지 다운로드
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = 'saju-story.png';
-  a.click();
-  URL.revokeObjectURL(url);
-  setTimeout(() => {
-    alert('이미지를 저장했어요! \n인스타그램 앱에서 스토리에 올려보세요.');
-  }, 500);
+    // ② iOS - 인스타그램 스토리 딥링크 시도
+    if (isIOS) {
+      const blobUrl = URL.createObjectURL(blob);
+      // 이미지 다운로드 후 인스타 앱으로
+      const a = document.createElement('a');
+      a.href = blobUrl; a.download = 'orbit-saju-story.png';
+      a.click();
+      setTimeout(() => {
+        URL.revokeObjectURL(blobUrl);
+        window.location.href = 'instagram://story-camera';
+        setTimeout(() => {
+          alert('이미지가 저장됐어요!
+인스타그램 스토리에서 갤러리 이미지를 선택해 공유하세요.');
+        }, 800);
+      }, 500);
+      if (btn) btn.innerHTML = origText;
+      return;
+    }
+
+    // ③ Android - 인스타그램 딥링크
+    if (isAndroid) {
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl; a.download = 'orbit-saju-story.png';
+      a.click();
+      setTimeout(() => {
+        URL.revokeObjectURL(blobUrl);
+        window.location.href = 'intent://story#Intent;package=com.instagram.android;scheme=https;end';
+        setTimeout(() => {
+          alert('이미지가 저장됐어요!
+인스타그램 스토리에서 갤러리 이미지를 선택해 공유하세요.');
+        }, 1000);
+      }, 600);
+      if (btn) btn.innerHTML = origText;
+      return;
+    }
+
+    // ④ PC - 이미지 다운로드
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'orbit-saju-story.png';
+    a.click();
+    URL.revokeObjectURL(url);
+    alert('이미지를 저장했어요!
+인스타그램 앱에서 스토리에 올려보세요.');
+
+  } catch(e) {
+    if (e.name !== 'AbortError') console.error('공유 오류:', e);
+  } finally {
+    if (btn) btn.innerHTML = origText;
+  }
 }
 
 async function generateStoryImage(chart) {
@@ -2685,19 +2781,26 @@ async function generateStoryImage(chart) {
 
   const elColor = {목:'#3a7d44',화:'#c0392b',토:'#c9a84c',금:'#7f8c9a',수:'#2471a3'};
 
-  // ── 배경 ──
-  const bg = ctx.createLinearGradient(0,0,0,H);
-  bg.addColorStop(0,   '#1a1410');
-  bg.addColorStop(0.5, '#2d2318');
-  bg.addColorStop(1,   '#1a1410');
+  // ── 배경 (오르빗 브랜드: Deep Midnight) ──
+  const bg = ctx.createLinearGradient(0,0,W,H);
+  bg.addColorStop(0,   '#1A1A2E');
+  bg.addColorStop(0.5, '#16213e');
+  bg.addColorStop(1,   '#0f3460');
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, W, H);
 
-  // 배경 원형 글로우
-  const glow = ctx.createRadialGradient(W/2, H*0.35, 0, W/2, H*0.35, 500);
-  glow.addColorStop(0, 'rgba(201,168,76,0.12)');
-  glow.addColorStop(1, 'transparent');
-  ctx.fillStyle = glow;
+  // 보라 글로우 (좌상단)
+  const glow1 = ctx.createRadialGradient(200, 400, 0, 200, 400, 600);
+  glow1.addColorStop(0, 'rgba(75,48,119,0.5)');
+  glow1.addColorStop(1, 'transparent');
+  ctx.fillStyle = glow1;
+  ctx.fillRect(0, 0, W, H);
+
+  // 민트 글로우 (우하단)
+  const glow2 = ctx.createRadialGradient(W-200, H-400, 0, W-200, H-400, 500);
+  glow2.addColorStop(0, 'rgba(0,196,160,0.15)');
+  glow2.addColorStop(1, 'transparent');
+  ctx.fillStyle = glow2;
   ctx.fillRect(0, 0, W, H);
 
   // ── 상단 장식선 ──
@@ -2850,20 +2953,29 @@ async function generateStoryImage(chart) {
   ctx.beginPath(); ctx.moveTo(80, footY); ctx.lineTo(W-80, footY); ctx.stroke();
 
   // ── 하단 CTA ──
-  ctx.fillStyle = '#c9a84c';
-  ctx.font = 'bold 40px serif';
+  // 민트 강조 CTA
+  ctx.fillStyle = '#00C4A0';
+  ctx.font = 'bold 44px sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText('나의 사주와 궁합을 확인해보세요', W/2, footY + 70);
+  ctx.fillText('나의 사주와 궁합을 확인하세요', W/2, footY + 70);
 
-  ctx.fillStyle = 'rgba(245,240,232,0.5)';
-  ctx.font = '32px sans-serif';
-  ctx.fillText('링크를 열어 생년월일을 입력하세요 ✨', W/2, footY + 130);
+  // 서브텍스트
+  ctx.fillStyle = 'rgba(248,249,250,0.6)';
+  ctx.font = '300 30px sans-serif';
+  ctx.fillText('생년월일을 입력하면 바로 확인 가능해요', W/2, footY + 120);
 
-  // URL
-  ctx.fillStyle = 'rgba(201,168,76,0.7)';
-  ctx.font = '28px sans-serif';
-  const shortUrl = window.location.hostname;
-  ctx.fillText(shortUrl, W/2, footY + 185);
+  // URL 박스
+  ctx.fillStyle = 'rgba(75,48,119,0.6)';
+  roundRect(ctx, W/2-200, footY+145, 400, 54, 27);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(0,196,160,0.5)';
+  ctx.lineWidth = 1.5;
+  roundRect(ctx, W/2-200, footY+145, 400, 54, 27);
+  ctx.stroke();
+  ctx.fillStyle = '#00C4A0';
+  ctx.font = '500 26px sans-serif';
+  const shortUrl = window.location.hostname || '4ju.kr';
+  ctx.fillText(shortUrl, W/2, footY + 182);
 
   return canvas;
 }
