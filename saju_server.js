@@ -124,12 +124,19 @@ const server = http.createServer((req, res) => {
           apiRes.on('data', d => errBody += d);
           apiRes.on('end', () => {
             console.error('[Anthropic 오류 응답]', errBody);
+            res.writeHead(apiRes.statusCode, { 'Content-Type': 'application/json' });
             res.end(errBody);
           });
           return;
         }
 
-        apiRes.pipe(res);
+        // 스트리밍 여부에 따라 처리
+        if (parsed.stream === false) {
+          res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+          apiRes.pipe(res);
+        } else {
+          apiRes.pipe(res);
+        }
       });
 
       proxy.on('error', (e) => {

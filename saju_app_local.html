@@ -818,6 +818,150 @@ nav {
   cursor:pointer; transition:opacity .2s;
 }
 .modal-close-btn:hover { opacity:.85; }
+
+/* ══════════════════════════════════════
+   루나 채팅 섹션
+══════════════════════════════════════ */
+.luna-chat-section {
+  background:#f5f0e8;
+  border:1px solid rgba(26,20,16,0.1);
+  border-radius:16px;
+  padding:24px;
+  margin-bottom:16px;
+}
+.luna-chat-header {
+  display:flex; align-items:center; gap:12px;
+  margin-bottom:20px;
+  padding-bottom:16px;
+  border-bottom:1px solid rgba(26,20,16,0.08);
+}
+.luna-chat-avatar {
+  width:48px; height:48px;
+  border-radius:50%;
+  object-fit:cover;
+  border:2px solid rgba(75,48,119,0.3);
+  flex-shrink:0;
+}
+.luna-chat-info h3 {
+  font-family:'Noto Serif KR',serif;
+  font-size:15px; font-weight:600;
+  color:#1a1410; margin-bottom:3px;
+}
+.luna-chat-info p {
+  font-size:11px; color:#8a7e70;
+}
+.luna-chat-messages {
+  display:flex; flex-direction:column; gap:14px;
+  max-height:420px; overflow-y:auto;
+  padding-right:4px; margin-bottom:16px;
+}
+.luna-chat-messages::-webkit-scrollbar { width:4px; }
+.luna-chat-messages::-webkit-scrollbar-track { background:transparent; }
+.luna-chat-messages::-webkit-scrollbar-thumb { background:rgba(26,20,16,0.1); border-radius:2px; }
+
+/* 말풍선 */
+.chat-bubble-wrap {
+  display:flex; align-items:flex-end; gap:8px;
+}
+.chat-bubble-wrap.user { flex-direction:row-reverse; }
+
+.chat-avatar-sm {
+  width:32px; height:32px; border-radius:50%;
+  object-fit:cover; flex-shrink:0;
+  border:1px solid rgba(75,48,119,0.2);
+}
+.chat-bubble {
+  max-width:75%;
+  padding:12px 16px;
+  border-radius:18px;
+  font-size:13px; line-height:1.7;
+  position:relative;
+  word-break:keep-all;
+}
+.chat-bubble.luna {
+  background:#fff;
+  border:1px solid rgba(26,20,16,0.1);
+  color:#1a1410;
+  border-bottom-left-radius:4px;
+}
+.chat-bubble.user {
+  background:#1a1410;
+  color:#f5f0e8;
+  border-bottom-right-radius:4px;
+  text-align:right;
+}
+.chat-bubble.typing {
+  display:flex; gap:4px; align-items:center;
+  padding:14px 18px;
+}
+.chat-typing-dot {
+  width:7px; height:7px; border-radius:50%;
+  background:#c9a84c; opacity:0.4;
+  animation:typingPulse 1.2s ease-in-out infinite;
+}
+.chat-typing-dot:nth-child(2) { animation-delay:.2s; }
+.chat-typing-dot:nth-child(3) { animation-delay:.4s; }
+@keyframes typingPulse {
+  0%,100% { opacity:.4; transform:scale(1); }
+  50% { opacity:1; transform:scale(1.3); }
+}
+.chat-time {
+  font-size:10px; color:#8a7e70;
+  margin-top:4px; padding:0 4px;
+  text-align:right;
+}
+.chat-bubble-wrap.luna .chat-time { text-align:left; }
+
+/* 입력창 */
+.luna-chat-input-wrap {
+  display:flex; gap:8px; align-items:flex-end;
+}
+.luna-chat-input {
+  flex:1;
+  padding:12px 16px;
+  border:1px solid rgba(26,20,16,0.12);
+  border-radius:12px;
+  font-family:'Noto Sans KR',sans-serif;
+  font-size:13px; color:#1a1410;
+  background:#fff;
+  resize:none; outline:none;
+  line-height:1.5;
+  min-height:44px; max-height:120px;
+  transition:border-color .2s;
+}
+.luna-chat-input:focus { border-color:#c9a84c; }
+.luna-chat-input::placeholder { color:#8a7e70; }
+.luna-chat-send {
+  width:44px; height:44px; flex-shrink:0;
+  background:#1a1410; color:#f5f0e8;
+  border:none; border-radius:12px;
+  cursor:pointer; transition:all .2s;
+  display:flex; align-items:center; justify-content:center;
+}
+.luna-chat-send:hover { background:#c9a84c; color:#1a1410; }
+.luna-chat-send:disabled { opacity:.4; cursor:not-allowed; }
+
+/* 추천 질문 */
+.luna-suggestions {
+  display:flex; gap:6px; flex-wrap:wrap;
+  margin-bottom:12px;
+}
+.luna-suggestion-btn {
+  font-size:11px; padding:6px 12px;
+  border:1px solid rgba(26,20,16,0.15);
+  border-radius:99px; background:#fff;
+  color:#3d332a; cursor:pointer;
+  transition:all .2s; white-space:nowrap;
+}
+.luna-suggestion-btn:hover {
+  background:#1a1410; color:#f5f0e8;
+  border-color:#1a1410;
+}
+
+@media(max-width:768px){
+  .chat-bubble { max-width:85%; font-size:13px; }
+  .luna-chat-messages { max-height:340px; }
+}
 </style>
 </head>
 <body>
@@ -993,6 +1137,54 @@ nav {
     <div class="compat-section" id="energy-section">
       <div class="compat-title"><span class="compat-dot"></span>루나의 기운 보충 처방전 </div>
       <div id="energy-tips-wrap"></div>
+    </div>
+
+    <!-- 루나에게 물어보기 -->
+    <div class="luna-chat-section" id="luna-chat-section">
+      <div class="luna-chat-header">
+        <img src="/Luna.png" alt="루나" class="luna-chat-avatar" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 40 40%22><circle cx=%2220%22 cy=%2220%22 r=%2220%22 fill=%22%234B3077%22/><text x=%2250%%22 y=%2255%%22 text-anchor=%22middle%22 fill=%22white%22 font-size=%2218%22>🐱</text></svg>'">
+        <div class="luna-chat-info">
+          <h3>루나에게 물어보기</h3>
+          <p>사주에 대해 궁금한 것을 루나에게 물어보세요</p>
+        </div>
+      </div>
+
+      <!-- 추천 질문 -->
+      <div class="luna-suggestions" id="luna-suggestions">
+        <button class="luna-suggestion-btn" onclick="sendLunaMsg(this.textContent)">내 사주에서 가장 강한 기운은?</button>
+        <button class="luna-suggestion-btn" onclick="sendLunaMsg(this.textContent)">올해 나한테 좋은 시기는?</button>
+        <button class="luna-suggestion-btn" onclick="sendLunaMsg(this.textContent)">내 일간이 뭘 의미해?</button>
+        <button class="luna-suggestion-btn" onclick="sendLunaMsg(this.textContent)">내 적성에 맞는 직업은?</button>
+      </div>
+
+      <!-- 대화창 -->
+      <div class="luna-chat-messages" id="luna-chat-messages">
+        <!-- 루나 첫 인사 -->
+        <div class="chat-bubble-wrap luna" id="luna-greeting">
+          <img src="/Luna.png" alt="루나" class="chat-avatar-sm" onerror="this.style.display='none'">
+          <div>
+            <div class="chat-bubble luna" id="luna-greeting-text">
+              사주 입력 후 질문해달라옹~
+            </div>
+            <div class="chat-time">루나</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 입력창 -->
+      <div class="luna-chat-input-wrap">
+        <textarea class="luna-chat-input" id="luna-input"
+          placeholder="루나에게 사주에 대해 물어보세요..."
+          rows="1"
+          onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendLunaMsg();}"
+          oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"></textarea>
+        <button class="luna-chat-send" id="luna-send-btn" onclick="sendLunaMsg()" title="전송">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:18px;height:18px;">
+            <line x1="22" y1="2" x2="11" y2="13"/>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+          </svg>
+        </button>
+      </div>
     </div>
 
     <!-- 공유 & 이동 버튼 -->
@@ -1813,6 +2005,8 @@ function renderResult(chart) {
 
   // 궁합추천 + 기운보충 렌더링
   renderCompatAndEnergy(chart);
+  // 루나 채팅 초기화
+  initLunaChat(chart);
 
   // 탭 초기화
   ['personality','career','love','health','wealth'].forEach(t => {
@@ -2642,6 +2836,156 @@ function showAILoading(container, messages) {
     if (msgEl) msgEl.textContent = msgs[idx];
   }, 1800);
   return timer;
+}
+
+
+// ══════════════════════════════════════════════
+// 루나 채팅 기능
+// ══════════════════════════════════════════════
+let lunaChatHistory = [];
+let lunaIsTyping = false;
+
+// 결과 렌더링 시 루나 인사말 업데이트
+function initLunaChat(chart) {
+  const greeting = document.getElementById('luna-greeting-text');
+  if (!greeting) return;
+  const name = chart.name ? chart.name + '님, ' : '';
+  const el = chart.dp.stem.el;
+  const EL_EMOJI = {목:'🌿',화:'🔥',토:'🌍',금:'✨',수:'💧'};
+  greeting.textContent = `${name}안녕하다옹! ${EL_EMOJI[el]||''}  ${el}의 기운을 가진 사주네옹~ 궁금한 거 뭐든지 물어봐달라옹!`;
+  lunaChatHistory = [];
+}
+
+function addChatBubble(text, isUser) {
+  const wrap = document.createElement('div');
+  wrap.className = 'chat-bubble-wrap ' + (isUser ? 'user' : 'luna');
+
+  const now = new Date();
+  const timeStr = now.getHours() + ':' + String(now.getMinutes()).padStart(2,'0');
+
+  if (isUser) {
+    wrap.innerHTML = `
+      <div>
+        <div class="chat-bubble user">${text.replace(/\n/g,'<br>')}</div>
+        <div class="chat-time">${timeStr}</div>
+      </div>`;
+  } else {
+    wrap.innerHTML = `
+      <img src="/Luna.png" alt="루나" class="chat-avatar-sm" onerror="this.style.display='none'">
+      <div>
+        <div class="chat-bubble luna">${text.replace(/\n/g,'<br>')}</div>
+        <div class="chat-time">루나 · ${timeStr}</div>
+      </div>`;
+  }
+
+  const container = document.getElementById('luna-chat-messages');
+  container.appendChild(wrap);
+  container.scrollTop = container.scrollHeight;
+  return wrap;
+}
+
+function addTypingIndicator() {
+  const wrap = document.createElement('div');
+  wrap.className = 'chat-bubble-wrap luna';
+  wrap.id = 'luna-typing';
+  wrap.innerHTML = `
+    <img src="/Luna.png" alt="루나" class="chat-avatar-sm" onerror="this.style.display='none'">
+    <div>
+      <div class="chat-bubble typing">
+        <span class="chat-typing-dot"></span>
+        <span class="chat-typing-dot"></span>
+        <span class="chat-typing-dot"></span>
+      </div>
+    </div>`;
+  const container = document.getElementById('luna-chat-messages');
+  container.appendChild(wrap);
+  container.scrollTop = container.scrollHeight;
+  return wrap;
+}
+
+async function sendLunaMsg(presetText) {
+  if (!currentChart) {
+    alert('먼저 사주를 조회해달라옹!');
+    return;
+  }
+  if (lunaIsTyping) return;
+
+  const input = document.getElementById('luna-input');
+  const text = (presetText || input.value).trim();
+  if (!text) return;
+
+  // 추천 질문 숨기기
+  const suggestions = document.getElementById('luna-suggestions');
+  if (suggestions) suggestions.style.display = 'none';
+
+  // 입력창 초기화
+  if (!presetText) { input.value = ''; input.style.height = 'auto'; }
+
+  // 사용자 말풍선
+  addChatBubble(text, true);
+
+  // 히스토리에 추가
+  lunaChatHistory.push({ role: 'user', content: text });
+
+  // 타이핑 인디케이터
+  lunaIsTyping = true;
+  document.getElementById('luna-send-btn').disabled = true;
+  const typing = addTypingIndicator();
+
+  try {
+    // 사주 컨텍스트 시스템 프롬프트
+    const chart = currentChart;
+    const systemPrompt = `당신은 '루나'라는 마법사 고양이 캐릭터예요. 사주명리 전문가이면서 MZ세대 친구처럼 대화해요.
+말투: ~라옹, ~이라옹, ~한다옹 으로 끝내되 자연스럽게 2~3문장에 한 번만 사용.
+답변: 짧고 임팩트 있게, 3~5문장 내외. 어려운 한자어 대신 현대적 언어 사용.
+
+이 사람의 사주 정보:
+- 이름: ${chart.name || '사용자'}
+- 생년월일: ${chart.year}년 ${chart.month}월 ${chart.day}일
+- 일간: ${chart.dp.stem.kr}(${chart.dp.stem.cn}) · ${chart.dp.stem.el}
+- 사주: 년주 ${chart.yp?.stem.kr||''}${chart.yp?.branch.kr||''}, 월주 ${chart.mp?.stem.kr||''}${chart.mp?.branch.kr||''}, 일주 ${chart.dp.stem.kr}${chart.dp.branch.kr}, 시주 ${chart.hp?.stem.kr||''}${chart.hp?.branch.kr||''}
+- 오행: 목${chart.elCounts.목||0} 화${chart.elCounts.화||0} 토${chart.elCounts.토||0} 금${chart.elCounts.금||0} 수${chart.elCounts.수||0}
+- 음양: 양${chart.yyCounts.yang} 음${chart.yyCounts.yin}
+
+이 정보를 바탕으로 사용자 질문에 답해줘.`;
+
+    const res = await fetch('/api/saju', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 400,
+        system: systemPrompt,
+        messages: lunaChatHistory,
+        stream: false,
+      })
+    });
+
+    const data = await res.json();
+    let replyText = '';
+
+    if (data.content && data.content[0]) {
+      replyText = data.content[0].text || '';
+    } else if (data.error) {
+      replyText = '잠깐 생각 중이라옹... 다시 물어봐달라옹!';
+    }
+
+    // 타이핑 제거 후 답변 표시
+    typing.remove();
+    addChatBubble(replyText, false);
+
+    // 히스토리 저장 (최대 10턴)
+    lunaChatHistory.push({ role: 'assistant', content: replyText });
+    if (lunaChatHistory.length > 20) lunaChatHistory = lunaChatHistory.slice(-20);
+
+  } catch(e) {
+    typing.remove();
+    addChatBubble('앗, 잠깐 연결이 끊겼다옹... 다시 물어봐달라옹!', false);
+  } finally {
+    lunaIsTyping = false;
+    document.getElementById('luna-send-btn').disabled = false;
+    input.focus();
+  }
 }
 
 async function fetchAI(prompt, maxTokens) {
