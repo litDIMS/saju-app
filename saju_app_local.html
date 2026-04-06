@@ -2949,7 +2949,7 @@ async function sendLunaMsg(presetText) {
 
 이 정보를 바탕으로 사용자 질문에 답해줘.`;
 
-    const res = await fetch('/api/saju', {
+    const lunaRes = await fetch('/api/saju', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
@@ -2961,12 +2961,23 @@ async function sendLunaMsg(presetText) {
       })
     });
 
-    const data = await res.json();
-    let replyText = '';
+    const rawText = await lunaRes.text();
+    console.log('[루나 응답 raw]', rawText.slice(0, 200));
 
-    if (data.content && data.content[0]) {
-      replyText = data.content[0].text || '';
-    } else if (data.error) {
+    let replyText = '';
+    try {
+      const data = JSON.parse(rawText);
+      if (data.content && data.content[0] && data.content[0].text) {
+        replyText = data.content[0].text;
+      } else if (data.error) {
+        console.error('[루나 API 오류]', data.error);
+        replyText = '잠깐 생각 중이라옹... 다시 물어봐달라옹!';
+      } else {
+        console.error('[루나 파싱 실패]', data);
+        replyText = '잠깐 생각 중이라옹... 다시 물어봐달라옹!';
+      }
+    } catch(parseErr) {
+      console.error('[루나 JSON 파싱 오류]', parseErr, rawText.slice(0,100));
       replyText = '잠깐 생각 중이라옹... 다시 물어봐달라옹!';
     }
 

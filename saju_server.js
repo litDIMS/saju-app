@@ -108,33 +108,38 @@ const server = http.createServer((req, res) => {
 
       const proxy = https.request(options, (apiRes) => {
         console.log('[응답] Anthropic 상태코드:', apiRes.statusCode);
-        if (apiRes.statusCode !== 200) {
-          console.log('[디버그] API_KEY 앞 20자:', API_KEY ? API_KEY.trim().slice(0,20) : 'EMPTY');
-          console.log('[디버그] 요청 모델:', parsed.model);
-        }
 
-        res.writeHead(apiRes.statusCode, {
-          'Content-Type':                'text/event-stream',
-          'Cache-Control':               'no-cache',
-          'Access-Control-Allow-Origin': '*',
-        });
+        const isStream = parsed.stream !== false;
 
         if (apiRes.statusCode !== 200) {
+          // 오류 응답
           let errBody = '';
           apiRes.on('data', d => errBody += d);
           apiRes.on('end', () => {
-            console.error('[Anthropic 오류 응답]', errBody);
-            res.writeHead(apiRes.statusCode, { 'Content-Type': 'application/json' });
+            console.error('[Anthropic 오류]', errBody);
+            res.writeHead(apiRes.statusCode, {
+              'Content-Type': 'application/json',
+              'Access-Control-Allow-Origin': '*',
+            });
             res.end(errBody);
           });
           return;
         }
 
-        // 스트리밍 여부에 따라 처리
-        if (parsed.stream === false) {
-          res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+        if (isStream) {
+          // 스트리밍 응답 (사주 해석)
+          res.writeHead(200, {
+            'Content-Type':                'text/event-stream',
+            'Cache-Control':               'no-cache',
+            'Access-Control-Allow-Origin': '*',
+          });
           apiRes.pipe(res);
         } else {
+          // 비스트리밍 응답 (루나 채팅)
+          res.writeHead(200, {
+            'Content-Type':                'application/json',
+            'Access-Control-Allow-Origin': '*',
+          });
           apiRes.pipe(res);
         }
       });
