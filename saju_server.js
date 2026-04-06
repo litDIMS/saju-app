@@ -5,7 +5,8 @@ const path = require('path');
 
 const PORT = process.env.PORT || 3000;
 const API_KEY        = process.env.ANTHROPIC_API_KEY || '';
-const KAKAO_REST_KEY = process.env.KAKAO_REST_API_KEY || ''; // 카카오 REST API 키
+const KAKAO_REST_KEY    = process.env.KAKAO_REST_API_KEY || '';
+const KAKAO_CLIENT_SECRET = process.env.KAKAO_CLIENT_SECRET || ''; // 클라이언트 시크릿 (사용 시)
 const KAKAO_JS_KEY   = 'c3e324417231b3e49d4b2462e0247904';   // 카카오 JS 키
 const JWT_SECRET     = process.env.JWT_SECRET || 'orbit-secret-2025';
 const REDIRECT_URI   = 'https://4ju.kr/auth/kakao/callback';
@@ -120,9 +121,13 @@ const server = http.createServer((req, res) => {
 
   // ── /auth/kakao/callback → 카카오 인증 후 콜백
   if (req.method === 'GET' && req.url.startsWith('/auth/kakao/callback')) {
-    const urlObj = new URL(req.url, 'https://4ju.kr');
-    const code = urlObj.searchParams.get('code');
-    const error = urlObj.searchParams.get('error');
+    // URL 파라미터 파싱 (쿼리스트링 직접 파싱)
+    const queryStr = req.url.includes('?') ? req.url.split('?')[1] : '';
+    const params = new URLSearchParams(queryStr);
+    const code = params.get('code');
+    const error = params.get('error');
+    console.log('[카카오 콜백] URL:', req.url.slice(0,100));
+    console.log('[카카오 콜백] code 존재:', !!code, '/ error:', error);
 
     if (error || !code) {
       res.writeHead(302, { Location: '/?login=fail' });
@@ -130,12 +135,15 @@ const server = http.createServer((req, res) => {
     }
 
     // code → access_token
-    const tokenBody = new URLSearchParams({
+    const tokenParams = {
       grant_type: 'authorization_code',
       client_id: KAKAO_REST_KEY,
       redirect_uri: REDIRECT_URI,
       code,
-    }).toString();
+    };
+    // 클라이언트 시크릿이 설정된 경우 추가
+    if (KAKAO_CLIENT_SECRET) tokenParams.client_secret = KAKAO_CLIENT_SECRET;
+    const tokenBody = new URLSearchParams(tokenParams).toString();
 
     const tokenReq = https.request({
       hostname: 'kauth.kakao.com', path: '/oauth/token', method: 'POST',
@@ -147,7 +155,9 @@ const server = http.createServer((req, res) => {
         try {
           const tokenData = JSON.parse(data);
           const accessToken = tokenData.access_token;
-          console.log('[카카오 토큰 응답]', JSON.stringify(tokenData).slice(0,200));
+          console.log('[카카오 토큰 응답]', JSON.stringify(tokenData).slice(0,300));
+          console.log('[카카오 REST KEY 앞10자]', KAKAO_REST_KEY.slice(0,10));
+          console.log('[REDIRECT_URI]', REDIRECT_URI);
           if (!accessToken) {
             console.error('[카카오 토큰 실패]', tokenData.error, tokenData.error_description);
             res.writeHead(302, { Location: '/?login=fail' }); res.end(); return;
@@ -164,8 +174,14 @@ const server = http.createServer((req, res) => {
               try {
                 const kakaoUser = JSON.parse(udata);
                 const kakaoId   = String(kakaoUser.id);
-                const nickname  = kakaoUser.kakao_account?.profile?.nickname || '사용자';
-                const imgUrl    = kakaoUser.kakao_account?.profile?.thumbnail_image_url || '';
+                console.log('[카카오 유저 원본]', JSON.stringify(kakaoUser).slice(0,300));
+                // 닉네임: properties 또는 kakao_account.profile 에서 가져오기
+                const nickname  = kakaoUser.properties?.nickname 
+                               || kakaoUser.kakao_account?.profile?.nickname 
+                               || '사용자';
+                const imgUrl    = kakaoUser.properties?.thumbnail_image
+                               || kakaoUser.kakao_account?.profile?.thumbnail_image_url 
+                               || '';
 
                 // 신규/기존 사용자 처리
                 if (!USERS[kakaoId]) {
@@ -466,6 +482,21 @@ const server = http.createServer((req, res) => {
       proxy.write(finalBody);
       proxy.end();
     });
+    return;
+  }
+
+  // ── 법적 페이지 서빙 (사업자정보/약관/환불)
+  const staticPages = {
+    '/business.html': 'business.html',
+    '/terms.html': 'terms.html',
+    '/refund.html': 'refund.html',
+  };
+  if (req.method === 'GET' && staticPages[req.url]) {
+    const filePath = path.join(__dirname, staticPages[req.url]);
+    if (fs.existsSync(filePath)) {
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'public, max-age=3600' });
+      fs.createReadStream(filePath).pipe(res);
+    } else { res.writeHead(404); res.end('Not found'); }
     return;
   }
 
