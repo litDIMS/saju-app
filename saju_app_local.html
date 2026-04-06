@@ -798,6 +798,26 @@ nav {
   opacity:1;
   transform:translateY(0) scale(1);
 }
+
+/* ── 모달 닫기 애니메이션 ── */
+@keyframes slideDown { from{transform:translateY(0);} to{transform:translateY(110%);} }
+@keyframes fadeOut   { from{opacity:1;} to{opacity:0;} }
+.modal-closing .tg-modal,
+.modal-closing .dw-modal { animation:slideDown .3s cubic-bezier(.55,0,.1,1) forwards; }
+.modal-closing { animation:fadeOut .3s ease forwards; }
+
+/* ── 모달 닫기 버튼 ── */
+.modal-close-btn {
+  display:flex; align-items:center; justify-content:center; gap:6px;
+  width:100%; padding:14px;
+  margin-top:20px;
+  background:#1a1410; color:#f5f0e8;
+  border:none; border-radius:12px;
+  font-family:'Noto Sans KR',sans-serif;
+  font-size:14px; font-weight:500;
+  cursor:pointer; transition:opacity .2s;
+}
+.modal-close-btn:hover { opacity:.85; }
 </style>
 </head>
 <body>
@@ -1438,6 +1458,51 @@ function getTenGod(dayMasterEl, dayMasterYY, targetEl, targetYY) {
 // ══════════════════════════════════════════════════════════════
 
 let selectedGender = '남';
+
+// ══════════════════════════════════════════════
+// 로컬스토리지 자동 저장 / 복원
+// ══════════════════════════════════════════════
+const LS_CHART = 'orbit_chart_v1';
+const LS_INTERP = 'orbit_interp_v1';
+
+function saveChartToStorage(chart) {
+  try {
+    localStorage.setItem(LS_CHART, JSON.stringify({
+      year:chart.year, month:chart.month, day:chart.day,
+      hour:chart.hour, name:chart.name, gender:chart.gender,
+      savedAt: Date.now()
+    }));
+  } catch(e) {}
+}
+
+function saveInterpToStorage(tab, text) {
+  try {
+    const stored = JSON.parse(localStorage.getItem(LS_INTERP) || '{}');
+    stored[tab] = text;
+    localStorage.setItem(LS_INTERP, JSON.stringify(stored));
+  } catch(e) {}
+}
+
+function loadInterpFromStorage() {
+  try {
+    return JSON.parse(localStorage.getItem(LS_INTERP) || '{}');
+  } catch(e) { return {}; }
+}
+
+function restoreFromStorage() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(LS_CHART));
+    if (!saved) return false;
+    // 7일 이내만 복원
+    if (Date.now() - saved.savedAt > 7 * 24 * 60 * 60 * 1000) {
+      localStorage.removeItem(LS_CHART);
+      localStorage.removeItem(LS_INTERP);
+      return false;
+    }
+    return saved;
+  } catch(e) { return false; }
+}
+
 let currentChart = null;
 let tabCache = {};
 
@@ -1557,6 +1622,7 @@ function startCalc() {
 
       currentChart = { year, month, day, hour, name, gender:selectedGender, yp, mp, dp, hp, elCounts, yyCounts, daewoons };
       tabCache = {};
+      saveChartToStorage(currentChart);
 
       renderResult(currentChart);
 
@@ -2139,6 +2205,13 @@ async function loadTabInterpretation(category) {
   // 이미 캐시 있으면 해당 탭만 렌더
   if (tabCache[category]) return;
   tabCache[category] = true;
+
+  // 저장된 해석 먼저 확인
+  const savedInterps = loadInterpFromStorage();
+  if (savedInterps[category]) {
+    showAIResult(container, savedInterps[category], category);
+    return;
+  }
   const container = document.getElementById('tab-' + category);
   const sectionText = parseSection(fullInterpCache, SECTION_MAP[category]);
   renderAccordion(container, sectionText || '해석을 받아오지 못했습니다.', category);
@@ -2462,7 +2535,7 @@ function showDaewoonModal(startAge, endAge, realYear, cn, kr, el) {
 
   const overlay = document.createElement('div');
   overlay.className = 'dw-modal-overlay';
-  overlay.onclick = (e) => { if(e.target===overlay) overlay.remove(); };
+  overlay.onclick = (e) => { if(e.target===overlay) closeModal(overlay); };
 
   overlay.innerHTML = `
     <div class="dw-modal">
@@ -2479,6 +2552,13 @@ function showDaewoonModal(startAge, endAge, realYear, cn, kr, el) {
     </div>`;
 
   document.body.appendChild(overlay);
+}
+
+
+// ── 모달 스르륵 닫기 ──
+function closeModal(overlay) {
+  overlay.classList.add('modal-closing');
+  setTimeout(() => overlay.remove(), 300);
 }
 
 function showTenGodModal(tgName) {
@@ -2515,11 +2595,11 @@ function showTenGodModal(tgName) {
 
   const overlay = document.createElement('div');
   overlay.className = 'tg-modal-overlay';
-  overlay.onclick = (e) => { if(e.target===overlay) overlay.remove(); };
+  overlay.onclick = (e) => { if(e.target===overlay) closeModal(overlay); };
 
   overlay.innerHTML = `
     <div class="tg-modal">
-      <div class="tg-modal-handle"></div>
+      <div class="tg-modal-handle" onclick="closeModal(document.querySelector('.tg-modal-overlay'))" style="cursor:pointer;width:60px;"></div>
       <div class="tg-modal-title">
         <span style="font-size:24px;">${data.emoji}</span>
         <span>${data.name}</span>
@@ -2530,6 +2610,10 @@ function showTenGodModal(tgName) {
       <div class="tg-modal-keywords">
         ${data.keywords.map(k=>`<span class="tg-modal-keyword">${k}</span>`).join('')}
       </div>
+      <button class="modal-close-btn" onclick="closeModal(document.querySelector('.tg-modal-overlay'))">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><polyline points="6 9 12 15 18 9"/></svg>
+        닫기
+      </button>
     </div>`;
 
   document.body.appendChild(overlay);
@@ -2652,57 +2736,47 @@ function copyShareLink() {
 
 function shareKakao() {
   if (!currentChart) return;
-
   const shareUrl = buildShareUrl();
   const name = currentChart.name || '친구';
-  const dayPillar = currentChart.dp.stem.kr + currentChart.dp.branch.kr;
-  const description = `${name}님의 일주는 ${dayPillar}(${currentChart.dp.stem.el})이에요. 생년월일을 입력하면 두 사람의 사주 궁합을 바로 확인할 수 있어요!`;
+  const description = `${name}님의 사주와 당신의 사주 궁합을 확인해보세요! 생년월일을 입력하면 바로 확인할 수 있어요.`;
 
-  // 카카오 SDK 사용
-  if (window.Kakao) {
-    if (!Kakao.isInitialized()) {
-      Kakao.init('YOUR_KAKAO_APP_KEY'); // 카카오 앱 키 입력 필요
-    }
-    try {
+  // 카카오 SDK 공유
+  try {
+    if (window.Kakao) {
+      if (!Kakao.isInitialized()) Kakao.init('c3e324417231b3e49d4b2462e0247904');
       Kakao.Share.sendDefault({
         objectType: 'feed',
         content: {
           title: `${name}님의 사주와 당신의 궁합을 확인해보세요!`,
           description: description,
           imageUrl: 'https://4ju.kr/Luna.png',
-          link: {
-            mobileWebUrl: shareUrl,
-            webUrl: shareUrl,
-          },
+          link: { mobileWebUrl: shareUrl, webUrl: shareUrl },
         },
-        buttons: [
-          {
-            title: '내 사주도 보기',
-            link: { mobileWebUrl: shareUrl, webUrl: shareUrl },
-          },
-        ],
+        buttons: [{
+          title: '내 사주도 보기',
+          link: { mobileWebUrl: shareUrl, webUrl: shareUrl },
+        }],
       });
       return;
-    } catch(e) {
-      console.log('카카오 SDK 오류, 폴백:', e.message);
     }
+  } catch(e) {
+    console.log('카카오 SDK 오류:', e.message);
   }
 
-  // 폴백: 카카오 앱스킴으로 직접 열기 (모바일)
-  const kakaoMsg = encodeURIComponent(`${name}님의 사주와 당신의 사주 궁합을 확인해보세요!\n\n${shareUrl}`);
+  // 폴백: Web Share API
   const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
   const isAndroid = /Android/.test(navigator.userAgent);
-
-  if (isIOS || isAndroid) {
-    // 카카오톡 앱 실행 (URL 스킴)
-    const kakaoAppUrl = `kakaotalk://msg/send?text=${kakaoMsg}`;
-    window.location.href = kakaoAppUrl;
-    // 앱 없으면 링크 복사로 폴백
-    setTimeout(() => copyShareLink(), 1500);
-  } else {
-    copyShareLink();
+  if ((isIOS || isAndroid) && navigator.share) {
+    navigator.share({
+      title: `${name}님의 사주와 당신의 궁합을 확인해보세요!`,
+      text: description,
+      url: shareUrl,
+    }).catch(e => { if (e.name !== 'AbortError') copyShareLink(); });
+    return;
   }
+  copyShareLink();
 }
+
 
 async function shareInsta() {
   if (!currentChart) return;
@@ -3413,7 +3487,51 @@ function switchSewoonTab(name, btn) {
 }
 
 
-window.addEventListener('load', function(){ if(typeof checkShareParams==='function') checkShareParams(); });
+
+// ── 이전 결과 복원 확인 ──
+window.addEventListener('load', function() {
+  if (typeof checkShareParams === 'function') checkShareParams();
+
+  const saved = restoreFromStorage();
+  if (!saved) return;
+
+  // 복원 배너 표시
+  const banner = document.createElement('div');
+  banner.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:999;background:#1a1410;color:#f5f0e8;padding:14px 20px;border-radius:14px;box-shadow:0 4px 20px rgba(0,0,0,0.3);display:flex;align-items:center;gap:12px;font-size:13px;max-width:320px;width:90%;animation:fadeUp .4s ease;';
+  banner.innerHTML = `
+    <span style="flex:1;">이전 사주 결과가 있어요. 바로 볼까요?</span>
+    <button onclick="restorePrevResult()" style="background:#c9a84c;color:#1a1410;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">복원하기</button>
+    <button onclick="this.parentElement.remove()" style="background:none;border:none;color:#8a7e70;cursor:pointer;font-size:18px;line-height:1;">&times;</button>`;
+  document.body.appendChild(banner);
+  setTimeout(() => { if(banner.parentElement) banner.style.opacity='0'; setTimeout(()=>banner.remove(),400); }, 8000);
+});
+
+function restorePrevResult() {
+  const saved = restoreFromStorage();
+  if (!saved) return;
+  document.querySelector('.notification-banner')?.remove();
+  document.querySelectorAll('[style*="fixed"][style*="bottom"]').forEach(el=>el.remove());
+
+  // 폼에 값 채우기 후 계산
+  const yi = document.getElementById('birth-year');
+  const mi = document.getElementById('birth-month');
+  const di = document.getElementById('birth-day');
+  const hi = document.getElementById('birth-hour');
+  const ni = document.getElementById('birth-name');
+  if (yi) yi.value = saved.year;
+  if (mi) mi.value = saved.month;
+  if (di) di.value = saved.day;
+  if (hi) hi.value = saved.hour ?? '';
+  if (ni) ni.value = saved.name || '';
+  if (saved.gender) {
+    selectedGender = saved.gender;
+    document.querySelectorAll('.gender-btn').forEach(b => {
+      b.classList.toggle('selected', b.dataset.gender === saved.gender);
+    });
+  }
+  if (typeof startCalc === 'function') startCalc();
+}
+
 </script>
 <script>window.addEventListener("load", function(){ if(typeof checkShareParams === "function") checkShareParams(); });</script>
 <div style="text-align:center;padding:24px 20px;font-size:12px;color:#8a7e70;border-top:1px solid rgba(26,20,16,0.08);">
