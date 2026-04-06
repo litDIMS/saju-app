@@ -2727,8 +2727,9 @@ async function shareInsta() {
       if (btn) btn.innerHTML = origText;
       await navigator.share({
         files: [file],
-        title: 'ORBIT 사주',
-        text: '나의 사주 분석 결과 · ORBIT 오르빗',
+        title: 'OR-BIT 오르빗 · 운명읽기',
+        text: '나의 사주 분석 결과를 확인해보세요!',
+        url: 'https://4ju.kr',
       });
       return;
     }
@@ -2814,27 +2815,35 @@ async function generateStoryImage(chart) {
   ctx.fillRect(0, 0, W, H);
 
   // ── 상단 장식선 ──
-  ctx.strokeStyle = 'rgba(201,168,76,0.4)';
+  ctx.strokeStyle = 'rgba(75,48,119,0.5)';
   ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(80, 120); ctx.lineTo(W-80, 120); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(80, 126); ctx.lineTo(W-80, 126); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(80, 175); ctx.lineTo(W-80, 175); ctx.stroke();
 
-  // ── 앱 이름 ──
-  ctx.fillStyle = '#c9a84c';
-  ctx.font = 'bold 52px serif';
+  // ── 오르빗 로고 영역 ──
+  // OR-BIT 워드마크
+  ctx.fillStyle = '#F8F9FA';
+  ctx.font = '200 58px sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText('命 사주명리', W/2, 100);
+  ctx.fillText('OR-BIT', W/2, 98);
+  // 언더라인 (민트)
+  ctx.strokeStyle = '#00C4A0';
+  ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(W/2-120, 112); ctx.lineTo(W/2+120, 112); ctx.stroke();
+  // 서브 태그라인
+  ctx.fillStyle = '#A0A0C0';
+  ctx.font = '300 28px sans-serif';
+  ctx.fillText('오르빗 · 운명읽기', W/2, 152);
 
   // ── 이름 / 생년월일 ──
   ctx.fillStyle = 'rgba(245,240,232,0.6)';
   ctx.font = '36px sans-serif';
   const nameStr = chart.name ? chart.name + ' · ' : '';
-  ctx.fillText(nameStr + chart.year + '년 ' + chart.month + '월 ' + chart.day + '일생', W/2, 210);
+  ctx.fillText(nameStr + chart.year + '년 ' + chart.month + '월 ' + chart.day + '일생', W/2, 240);
 
   // ── 일간 강조 ──
   ctx.fillStyle = '#c9a84c';
   ctx.font = 'bold 44px serif';
-  ctx.fillText('일간 ' + chart.dp.stem.cn + '(' + chart.dp.stem.kr + ') · ' + chart.dp.stem.el, W/2, 290);
+  ctx.fillText('일간 ' + chart.dp.stem.cn + '(' + chart.dp.stem.kr + ') · ' + chart.dp.stem.el, W/2, 320);
 
   // ── 사주 4기둥 ──
   const pillars = [
@@ -2957,7 +2966,7 @@ async function generateStoryImage(chart) {
   ctx.fill();
 
   // ── 하단 구분선 ──
-  const footY = H - 200;
+  const footY = H - 580;  // 인스타 하단 UI 가림 방지
   ctx.strokeStyle = 'rgba(201,168,76,0.3)';
   ctx.lineWidth = 1;
   ctx.beginPath(); ctx.moveTo(80, footY); ctx.lineTo(W-80, footY); ctx.stroke();
@@ -2986,6 +2995,39 @@ async function generateStoryImage(chart) {
   ctx.font = '500 26px sans-serif';
   const shortUrl = window.location.hostname || '4ju.kr';
   ctx.fillText(shortUrl, W/2, footY + 182);
+
+  // ── 링크 스티커 안내 (하단 여백) ──
+  const linkY = footY + 260;
+  // 점선 구분선
+  ctx.setLineDash([8, 6]);
+  ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(120, linkY); ctx.lineTo(W-120, linkY); ctx.stroke();
+  ctx.setLineDash([]);
+  // 링크 스티커 박스
+  ctx.fillStyle = 'rgba(255,255,255,0.06)';
+  roundRect(ctx, W/2-260, linkY+20, 520, 90, 18);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+  ctx.lineWidth = 1;
+  roundRect(ctx, W/2-260, linkY+20, 520, 90, 18);
+  ctx.stroke();
+  // 링크 아이콘 원
+  ctx.fillStyle = '#00C4A0';
+  ctx.beginPath(); ctx.arc(W/2-200, linkY+65, 24, 0, Math.PI*2); ctx.fill();
+  // 링크 심볼 텍스트
+  ctx.fillStyle = '#1A1A2E';
+  ctx.font = 'bold 28px sans-serif';
+  ctx.fillText('↗', W/2-200, linkY+74);
+  // 링크 텍스트
+  ctx.fillStyle = '#F8F9FA';
+  ctx.font = '400 26px sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText(shortUrl, W/2-160, linkY+58);
+  ctx.fillStyle = '#A0A0C0';
+  ctx.font = '300 22px sans-serif';
+  ctx.fillText('링크로 이동해서 사주 확인하기', W/2-160, linkY+84);
+  ctx.textAlign = 'center';
 
   return canvas;
 }
