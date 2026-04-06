@@ -147,7 +147,11 @@ const server = http.createServer((req, res) => {
         try {
           const tokenData = JSON.parse(data);
           const accessToken = tokenData.access_token;
-          if (!accessToken) { res.writeHead(302, { Location: '/?login=fail' }); res.end(); return; }
+          console.log('[카카오 토큰 응답]', JSON.stringify(tokenData).slice(0,200));
+          if (!accessToken) {
+            console.error('[카카오 토큰 실패]', tokenData.error, tokenData.error_description);
+            res.writeHead(302, { Location: '/?login=fail' }); res.end(); return;
+          }
 
           // access_token → 사용자 정보
           const userReq = https.request({
@@ -183,7 +187,7 @@ const server = http.createServer((req, res) => {
                 const token = makeJWT({ kakaoId, nickname });
                 res.writeHead(302, { Location: `/?token=${token}` });
                 res.end();
-              } catch(e) { res.writeHead(302, { Location: '/?login=fail' }); res.end(); }
+              } catch(e) { console.error('[카카오 유저 파싱 실패]', e.message, udata.slice(0,100)); res.writeHead(302, { Location: '/?login=fail' }); res.end(); }
             });
           });
           userReq.on('error', () => { res.writeHead(302, { Location: '/?login=fail' }); res.end(); });
@@ -191,7 +195,7 @@ const server = http.createServer((req, res) => {
         } catch(e) { res.writeHead(302, { Location: '/?login=fail' }); res.end(); }
       });
     });
-    tokenReq.on('error', () => { res.writeHead(302, { Location: '/?login=fail' }); res.end(); });
+    tokenReq.on('error', (e) => { console.error('[카카오 토큰 요청 에러]', e.message); res.writeHead(302, { Location: '/?login=fail' }); res.end(); });
     tokenReq.write(tokenBody);
     tokenReq.end();
     return;
@@ -218,6 +222,16 @@ const server = http.createServer((req, res) => {
   }
 
   // ── 정적 이미지 파일 서빙 (Luna.png / luna.png)
+  // ── OG 이미지 서빙
+  if (req.method === 'GET' && req.url === '/og-image.png') {
+    const imgPath = path.join(__dirname, 'og-image.png');
+    if (fs.existsSync(imgPath)) {
+      res.writeHead(200, { 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=86400' });
+      fs.createReadStream(imgPath).pipe(res);
+    } else { res.writeHead(404); res.end('Not found'); }
+    return;
+  }
+
   if (req.method === 'GET' && (req.url === '/Luna.png' || req.url === '/luna.png')) {
     // Luna.png 우선, 없으면 luna.png 시도
     let imgPath = path.join(__dirname, 'Luna.png');
