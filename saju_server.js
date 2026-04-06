@@ -31,9 +31,11 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // ── 정적 이미지 파일 서빙 (luna.png 등)
-  if (req.method === 'GET' && req.url === '/luna.png') {
-    const imgPath = path.join(__dirname, 'luna.png');
+  // ── 정적 이미지 파일 서빙 (Luna.png / luna.png)
+  if (req.method === 'GET' && (req.url === '/Luna.png' || req.url === '/luna.png')) {
+    // Luna.png 우선, 없으면 luna.png 시도
+    let imgPath = path.join(__dirname, 'Luna.png');
+    if (!fs.existsSync(imgPath)) imgPath = path.join(__dirname, 'luna.png');
     if (fs.existsSync(imgPath)) {
       res.writeHead(200, { 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=86400' });
       fs.createReadStream(imgPath).pipe(res);
@@ -99,13 +101,17 @@ const server = http.createServer((req, res) => {
         headers: {
           'Content-Type':      'application/json',
           'Content-Length':    Buffer.byteLength(finalBody),
-          'x-api-key':         API_KEY,
+          'x-api-key':         API_KEY.trim(),
           'anthropic-version': '2023-06-01',
         }
       };
 
       const proxy = https.request(options, (apiRes) => {
         console.log('[응답] Anthropic 상태코드:', apiRes.statusCode);
+        if (apiRes.statusCode !== 200) {
+          console.log('[디버그] API_KEY 앞 20자:', API_KEY ? API_KEY.trim().slice(0,20) : 'EMPTY');
+          console.log('[디버그] 요청 모델:', parsed.model);
+        }
 
         res.writeHead(apiRes.statusCode, {
           'Content-Type':                'text/event-stream',
