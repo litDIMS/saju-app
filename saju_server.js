@@ -299,6 +299,64 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // ══════════════════════════════════════════════
+  // 관리자 API
+  // ══════════════════════════════════════════════
+  const ADMIN_KEY = process.env.ADMIN_KEY || 'orbit2025!';
+
+  function checkAdmin(req, res) {
+    const key = req.headers['x-admin-key'];
+    if (key !== ADMIN_KEY) {
+      res.writeHead(403, {'Content-Type':'application/json','Access-Control-Allow-Origin':'*'});
+      res.end(JSON.stringify({error:'forbidden'}));
+      return false;
+    }
+    return true;
+  }
+
+  // /admin → 관리자 대시보드 페이지 서빙
+  if (req.method === 'GET' && req.url === '/admin') {
+    const adminFile = path.join(__dirname, 'admin.html');
+    if (fs.existsSync(adminFile)) {
+      res.writeHead(200, {'Content-Type':'text/html; charset=utf-8'});
+      fs.createReadStream(adminFile).pipe(res);
+    } else {
+      res.writeHead(404); res.end('Admin page not found');
+    }
+    return;
+  }
+
+  // /api/admin/users → 전체 회원 목록
+  if (req.method === 'GET' && req.url === '/api/admin/users') {
+    if (!checkAdmin(req, res)) return;
+    res.writeHead(200, {'Content-Type':'application/json','Access-Control-Allow-Origin':'*'});
+    res.end(JSON.stringify(Object.values(USERS)));
+    return;
+  }
+
+  // /api/admin/adjust-stars → 별 수동 조정
+  if (req.method === 'POST' && req.url === '/api/admin/adjust-stars') {
+    if (!checkAdmin(req, res)) return;
+    let body = '';
+    req.on('data', c => body += c);
+    req.on('end', () => {
+      try {
+        const { kakaoId, amount, reason } = JSON.parse(body);
+        const user = USERS[kakaoId];
+        if (!user) {
+          res.writeHead(404, {'Content-Type':'application/json','Access-Control-Allow-Origin':'*'});
+          res.end(JSON.stringify({error:'user not found'})); return;
+        }
+        user.stars = Math.max(0, (user.stars || 0) + amount);
+        saveUsers();
+        console.log(\`[관리자] 별 조정: \${user.nickname} \${amount > 0 ? '+' : ''}\${amount}별 (사유: \${reason})\`);
+        res.writeHead(200, {'Content-Type':'application/json','Access-Control-Allow-Origin':'*'});
+        res.end(JSON.stringify({ok:true, stars: user.stars}));
+      } catch(e) { res.writeHead(400); res.end('Bad Request'); }
+    });
+    return;
+  }
+
   // ── /api/cache-stats → 캐시 현황 조회 (관리자용)
   if (req.method === 'GET' && req.url === '/api/cache-stats') {
     const stats = {

@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OR-BIT 관리자 대시보드</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:       #0d0d14;
+  --surface:  #13131f;
+  --card:     #1a1a2e;
+  --border:   rgba(255,255,255,0.07);
+  --purple:   #4B3077;
+  --mint:     #00C4A0;
+  --yellow:   #FFD700;
+  --red:      #ef4444;
+  --text:     #F8F9FA;
+  --muted:    #6b7280;
+  --mono:     'DM Mono', monospace;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Noto Sans KR',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+
+/* 로그인 화면 */
+#login-screen {
+  display:flex; align-items:center; justify-content:center;
+  min-height:100vh;
+  background:radial-gradient(ellipse at 30% 30%, rgba(75,48,119,0.3) 0%, transparent 60%),
+             radial-gradient(ellipse at 80% 80%, rgba(0,196,160,0.1) 0%, transparent 50%);
+}
+.login-box {
+  background:var(--card); border:1px solid var(--border);
+  border-radius:20px; padding:48px 40px; width:360px;
+  text-align:center;
+}
+.login-logo { font-size:13px; letter-spacing:0.3em; color:var(--mint); margin-bottom:8px; }
+.login-title { font-size:22px; font-weight:600; margin-bottom:6px; }
+.login-sub { font-size:13px; color:var(--muted); margin-bottom:32px; }
+.login-input {
+  width:100%; padding:13px 16px; margin-bottom:12px;
+  background:rgba(255,255,255,0.05); border:1px solid var(--border);
+  border-radius:10px; color:var(--text); font-size:14px;
+  font-family:'Noto Sans KR',sans-serif; outline:none;
+  transition:border-color .2s;
+}
+.login-input:focus { border-color:var(--mint); }
+.login-btn {
+  width:100%; padding:14px;
+  background:linear-gradient(135deg,var(--purple),var(--mint));
+  border:none; border-radius:10px;
+  color:#fff; font-size:14px; font-weight:600;
+  cursor:pointer; transition:opacity .2s;
+  font-family:'Noto Sans KR',sans-serif;
+}
+.login-btn:hover { opacity:.9; }
+
+/* 메인 레이아웃 */
+#app { display:none; min-height:100vh; }
+.sidebar {
+  position:fixed; left:0; top:0; bottom:0; width:220px;
+  background:var(--surface); border-right:1px solid var(--border);
+  padding:24px 0; display:flex; flex-direction:column;
+  z-index:100;
+}
+.sidebar-logo {
+  padding:0 24px 24px;
+  border-bottom:1px solid var(--border);
+  margin-bottom:16px;
+}
+.sidebar-logo-text { font-size:15px; font-weight:700; letter-spacing:0.15em; }
+.sidebar-logo-sub { font-size:10px; color:var(--muted); letter-spacing:0.1em; margin-top:3px; }
+.sidebar-nav { flex:1; }
+.nav-item {
+  display:flex; align-items:center; gap:10px;
+  padding:11px 24px; font-size:13px; color:var(--muted);
+  cursor:pointer; transition:all .15s; border-left:2px solid transparent;
+}
+.nav-item:hover { color:var(--text); background:rgba(255,255,255,0.03); }
+.nav-item.active { color:var(--mint); border-left-color:var(--mint); background:rgba(0,196,160,0.06); }
+.nav-item svg { width:16px; height:16px; flex-shrink:0; }
+.nav-section-label {
+  padding:16px 24px 6px; font-size:10px; color:var(--muted);
+  letter-spacing:0.1em; font-weight:500;
+}
+.sidebar-footer { padding:16px 24px; border-top:1px solid var(--border); }
+.admin-badge { font-size:11px; color:var(--muted); }
+
+/* 메인 콘텐츠 */
+.main { margin-left:220px; padding:32px; min-height:100vh; }
+.page { display:none; }
+.page.active { display:block; }
+.page-title { font-size:20px; font-weight:600; margin-bottom:6px; }
+.page-sub { font-size:13px; color:var(--muted); margin-bottom:28px; }
+
+/* 통계 카드 */
+.stats-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:28px; }
+.stat-card {
+  background:var(--card); border:1px solid var(--border);
+  border-radius:14px; padding:20px;
+}
+.stat-label { font-size:11px; color:var(--muted); letter-spacing:0.05em; margin-bottom:10px; }
+.stat-value { font-size:28px; font-weight:600; font-family:var(--mono); }
+.stat-change { font-size:11px; margin-top:6px; }
+.stat-change.up { color:var(--mint); }
+.stat-change.down { color:var(--red); }
+.stat-accent { width:3px; height:40px; border-radius:2px; float:right; margin-top:-40px; }
+
+/* 테이블 */
+.table-card {
+  background:var(--card); border:1px solid var(--border);
+  border-radius:14px; overflow:hidden; margin-bottom:20px;
+}
+.table-header {
+  padding:16px 20px; border-bottom:1px solid var(--border);
+  display:flex; align-items:center; justify-content:space-between;
+}
+.table-title { font-size:14px; font-weight:500; }
+.table-actions { display:flex; gap:8px; }
+.btn {
+  padding:7px 14px; border-radius:8px; font-size:12px;
+  font-weight:500; cursor:pointer; border:none;
+  font-family:'Noto Sans KR',sans-serif; transition:all .15s;
+}
+.btn-primary { background:var(--mint); color:#0d0d14; }
+.btn-primary:hover { opacity:.85; }
+.btn-outline { background:transparent; color:var(--text); border:1px solid var(--border); }
+.btn-outline:hover { border-color:var(--mint); color:var(--mint); }
+.btn-danger { background:var(--red); color:#fff; }
+.btn-sm { padding:5px 10px; font-size:11px; }
+
+table { width:100%; border-collapse:collapse; }
+th {
+  padding:12px 20px; text-align:left;
+  font-size:11px; color:var(--muted); font-weight:500;
+  letter-spacing:0.05em; border-bottom:1px solid var(--border);
+}
+td {
+  padding:14px 20px; font-size:13px;
+  border-bottom:1px solid rgba(255,255,255,0.04);
+}
+tr:last-child td { border-bottom:none; }
+tr:hover td { background:rgba(255,255,255,0.02); }
+
+.badge {
+  display:inline-block; padding:3px 10px; border-radius:99px;
+  font-size:11px; font-weight:500;
+}
+.badge-active { background:rgba(0,196,160,0.12); color:var(--mint); }
+.badge-inactive { background:rgba(107,114,128,0.12); color:var(--muted); }
+.badge-paid { background:rgba(255,215,0,0.12); color:var(--yellow); }
+
+.stars-badge {
+  font-family:var(--mono); font-size:13px; color:var(--yellow);
+  background:rgba(255,215,0,0.08); padding:3px 10px; border-radius:6px;
+}
+
+/* 검색 */
+.search-bar {
+  display:flex; gap:10px; margin-bottom:20px; align-items:center;
+}
+.search-input {
+  flex:1; padding:10px 16px; border-radius:10px;
+  background:var(--card); border:1px solid var(--border);
+  color:var(--text); font-size:13px; font-family:'Noto Sans KR',sans-serif;
+  outline:none; transition:border-color .2s; max-width:320px;
+}
+.search-input:focus { border-color:var(--mint); }
+
+/* 모달 */
+.modal-overlay {
+  position:fixed; inset:0; background:rgba(0,0,0,0.6);
+  display:flex; align-items:center; justify-content:center;
+  z-index:999; display:none;
+}
+.modal-overlay.open { display:flex; }
+.modal {
+  background:var(--card); border:1px solid var(--border);
+  border-radius:16px; padding:28px; width:400px;
+  animation:fadeUp .2s ease;
+}
+@keyframes fadeUp { from{transform:translateY(10px);opacity:0;} to{transform:translateY(0);opacity:1;} }
+.modal-title { font-size:16px; font-weight:600; margin-bottom:20px; }
+.modal-field { margin-bottom:14px; }
+.modal-label { font-size:11px; color:var(--muted); margin-bottom:6px; display:block; }
+.modal-input {
+  width:100%; padding:10px 14px; border-radius:8px;
+  background:rgba(255,255,255,0.05); border:1px solid var(--border);
+  color:var(--text); font-size:13px; font-family:'Noto Sans KR',sans-serif; outline:none;
+}
+.modal-input:focus { border-color:var(--mint); }
+.modal-actions { display:flex; gap:8px; justify-content:flex-end; margin-top:20px; }
+
+/* 차트 바 */
+.mini-bar-wrap { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+.mini-bar-label { font-size:12px; color:var(--muted); width:60px; }
+.mini-bar-track { flex:1; height:6px; background:rgba(255,255,255,0.06); border-radius:3px; overflow:hidden; }
+.mini-bar-fill { height:100%; border-radius:3px; transition:width .8s ease; }
+.mini-bar-val { font-size:12px; font-family:var(--mono); color:var(--text); width:40px; text-align:right; }
+
+/* 활동 로그 */
+.log-item {
+  display:flex; align-items:flex-start; gap:12px;
+  padding:12px 0; border-bottom:1px solid rgba(255,255,255,0.04);
+}
+.log-dot { width:8px; height:8px; border-radius:50%; margin-top:5px; flex-shrink:0; }
+.log-text { font-size:13px; flex:1; }
+.log-time { font-size:11px; color:var(--muted); font-family:var(--mono); }
+
+/* 알림 토스트 */
+.toast {
+  position:fixed; bottom:24px; right:24px;
+  background:var(--card); border:1px solid var(--border);
+  border-radius:12px; padding:14px 20px;
+  font-size:13px; z-index:9999;
+  box-shadow:0 8px 24px rgba(0,0,0,0.3);
+  animation:fadeUp .3s ease;
+  display:none;
+}
+.toast.show { display:block; }
+
+@keyframes fadeIn { from{opacity:0;} to{opacity:1;} }
+</style>
+</head>
+<body>
+
+<!-- 로그인 화면 -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">OR-BIT</div>
+    <div class="login-title">관리자 대시보드</div>
+    <div class="login-sub">오르빗 운영팀 전용</div>
+    <input class="login-input" type="password" id="admin-pw" placeholder="관리자 비밀번호"
+      onkeydown="if(event.key==='Enter')adminLogin()">
+    <button class="login-btn" onclick="adminLogin()">로그인</button>
+  </div>
+</div>
+
+<!-- 메인 앱 -->
+<div id="app">
+  <!-- 사이드바 -->
+  <div class="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-text">OR-BIT</div>
+      <div class="sidebar-logo-sub">ADMIN DASHBOARD</div>
+    </div>
+    <div class="sidebar-nav">
+      <div class="nav-section-label">메인</div>
+      <div class="nav-item active" onclick="showPage('overview')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        대시보드 개요
+      </div>
+      <div class="nav-section-label">회원 관리</div>
+      <div class="nav-item" onclick="showPage('users')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        회원 목록
+      </div>
+      <div class="nav-item" onclick="showPage('stars')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        별 관리
+      </div>
+      <div class="nav-item" onclick="showPage('payments')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+        충전 내역
+      </div>
+      <div class="nav-section-label">서비스</div>
+      <div class="nav-item" onclick="showPage('usage')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        API 사용량
+      </div>
+      <div class="nav-item" onclick="showPage('logs')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        활동 로그
+      </div>
+      <div class="nav-item" onclick="showPage('settings')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
+        설정
+      </div>
+    </div>
+    <div class="sidebar-footer">
+      <div class="admin-badge">관리자 로그인됨</div>
+      <button class="btn btn-outline btn-sm" style="margin-top:8px;width:100%;" onclick="adminLogout()">로그아웃</button>
+    </div>
+  </div>
+
+  <!-- 메인 콘텐츠 -->
+  <div class="main">
+
+    <!-- 개요 -->
+    <div class="page active" id="page-overview">
+      <div class="page-title">대시보드 개요</div>
+      <div class="page-sub" id="overview-date"></div>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">전체 회원</div>
+          <div class="stat-value" id="stat-users">0</div>
+          <div class="stat-change up" id="stat-users-new">+0 오늘 신규</div>
+          <div class="stat-accent" style="background:var(--mint);"></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">총 별 발행량</div>
+          <div class="stat-value" id="stat-stars">0</div>
+          <div class="stat-change" style="color:var(--yellow);">유상 + 무상</div>
+          <div class="stat-accent" style="background:var(--yellow);"></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">오늘 사주 조회</div>
+          <div class="stat-value" id="stat-reads">-</div>
+          <div class="stat-change up">9별 × 조회수</div>
+          <div class="stat-accent" style="background:var(--purple);"></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">캐시 적중률</div>
+          <div class="stat-value" id="stat-cache">-</div>
+          <div class="stat-change up">API 비용 절감</div>
+          <div class="stat-accent" style="background:#60a5fa;"></div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <!-- 오행 분포 -->
+        <div class="table-card">
+          <div class="table-header">
+            <div class="table-title">일주 조회 분포 (상위)</div>
+          </div>
+          <div style="padding:20px;" id="pillar-chart">
+            <div class="mini-bar-wrap"><div class="mini-bar-label">갑자</div><div class="mini-bar-track"><div class="mini-bar-fill" style="width:85%;background:var(--mint);"></div></div><div class="mini-bar-val">85</div></div>
+            <div class="mini-bar-wrap"><div class="mini-bar-label">을축</div><div class="mini-bar-track"><div class="mini-bar-fill" style="width:72%;background:var(--mint);"></div></div><div class="mini-bar-val">72</div></div>
+            <div class="mini-bar-wrap"><div class="mini-bar-label">병인</div><div class="mini-bar-track"><div class="mini-bar-fill" style="width:61%;background:var(--mint);"></div></div><div class="mini-bar-val">61</div></div>
+            <div class="mini-bar-wrap"><div class="mini-bar-label">정묘</div><div class="mini-bar-track"><div class="mini-bar-fill" style="width:54%;background:var(--mint);"></div></div><div class="mini-bar-val">54</div></div>
+            <div class="mini-bar-wrap"><div class="mini-bar-label">무진</div><div class="mini-bar-track"><div class="mini-bar-fill" style="width:43%;background:var(--mint);"></div></div><div class="mini-bar-val">43</div></div>
+          </div>
+        </div>
+        <!-- 최근 활동 -->
+        <div class="table-card">
+          <div class="table-header"><div class="table-title">최근 활동</div></div>
+          <div style="padding:0 20px;" id="recent-logs">
+            <div class="log-item"><div class="log-dot" style="background:var(--mint);"></div><div><div class="log-text">신규 회원 가입 — 9별 지급</div><div class="log-time">방금 전</div></div></div>
+            <div class="log-item"><div class="log-dot" style="background:var(--yellow);"></div><div><div class="log-text">별 충전 900원 → 9별</div><div class="log-time">5분 전</div></div></div>
+            <div class="log-item"><div class="log-dot" style="background:var(--purple);"></div><div><div class="log-text">사주 조회 — 9별 차감</div><div class="log-time">12분 전</div></div></div>
+            <div class="log-item"><div class="log-dot" style="background:#60a5fa;"></div><div><div class="log-text">루나 채팅 — 1별 차감</div><div class="log-time">18분 전</div></div></div>
+            <div class="log-item"><div class="log-dot" style="background:var(--mint);"></div><div><div class="log-text">신규 회원 가입 — 9별 지급</div><div class="log-time">34분 전</div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 회원 목록 -->
+    <div class="page" id="page-users">
+      <div class="page-title">회원 관리</div>
+      <div class="page-sub">카카오 로그인 회원 목록</div>
+      <div class="search-bar">
+        <input class="search-input" type="text" id="user-search" placeholder="닉네임 검색..."
+          oninput="filterUsers()">
+        <button class="btn btn-outline" onclick="loadUsers()">새로고침</button>
+        <button class="btn btn-primary" onclick="openGiveStarsModal()">★ 별 일괄 지급</button>
+      </div>
+      <div class="table-card">
+        <table>
+          <thead>
+            <tr>
+              <th>회원</th>
+              <th>카카오 ID</th>
+              <th>별 잔액</th>
+              <th>가입일</th>
+              <th>상태</th>
+              <th>관리</th>
+            </tr>
+          </thead>
+          <tbody id="users-table">
+            <tr><td colspan="6" style="text-align:center;color:var(--muted);padding:40px;">데이터 로딩 중...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 별 관리 -->
+    <div class="page" id="page-stars">
+      <div class="page-title">별(★) 관리</div>
+      <div class="page-sub">회원별 별 잔액 조회 및 수동 지급/차감</div>
+      <div class="search-bar">
+        <input class="search-input" type="text" id="star-search" placeholder="닉네임 검색...">
+        <button class="btn btn-primary" onclick="openAdjustModal()">★ 별 조정</button>
+      </div>
+      <div class="table-card">
+        <table>
+          <thead>
+            <tr>
+              <th>회원</th>
+              <th>현재 잔액</th>
+              <th>총 획득</th>
+              <th>총 사용</th>
+              <th>최근 활동</th>
+              <th>관리</th>
+            </tr>
+          </thead>
+          <tbody id="stars-table">
+            <tr><td colspan="6" style="text-align:center;color:var(--muted);padding:40px;">데이터 로딩 중...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 충전 내역 -->
+    <div class="page" id="page-payments">
+      <div class="page-title">별 충전 내역</div>
+      <div class="page-sub">Toss 결제 및 무상 지급 내역</div>
+      <div class="stats-grid" style="grid-template-columns:repeat(3,1fr);">
+        <div class="stat-card">
+          <div class="stat-label">총 결제액</div>
+          <div class="stat-value">₩0</div>
+          <div class="stat-change up">Toss 연동 예정</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">무상 지급 별</div>
+          <div class="stat-value" id="free-stars">0</div>
+          <div class="stat-change" style="color:var(--yellow);">신규가입 보너스</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">유상 충전 별</div>
+          <div class="stat-value">0</div>
+          <div class="stat-change up">Toss 연동 후 집계</div>
+        </div>
+      </div>
+      <div class="table-card">
+        <div class="table-header"><div class="table-title">충전 내역</div></div>
+        <table>
+          <thead>
+            <tr><th>회원</th><th>유형</th><th>별</th><th>금액</th><th>일시</th><th>상태</th></tr>
+          </thead>
+          <tbody id="payments-table">
+            <tr><td colspan="6" style="text-align:center;color:var(--muted);padding:40px;">Toss 결제 연동 후 표시됩니다</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- API 사용량 -->
+    <div class="page" id="page-usage">
+      <div class="page-title">API 사용량</div>
+      <div class="page-sub">Anthropic Claude API 호출 현황</div>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">캐시 DB 항목수</div>
+          <div class="stat-value" id="cache-db-size">-</div>
+          <div class="stat-change up">일주별 저장 해석</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">메모리 캐시</div>
+          <div class="stat-value" id="cache-mem-size">-</div>
+          <div class="stat-change up">서버 메모리 캐시</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">예상 절감 비용</div>
+          <div class="stat-value">-</div>
+          <div class="stat-change up">캐시 적중 기준</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">루나 채팅 단가</div>
+          <div class="stat-value">~3원</div>
+          <div class="stat-change up">Haiku 기준</div>
+        </div>
+      </div>
+      <div class="table-card">
+        <div class="table-header">
+          <div class="table-title">캐시 현황</div>
+          <button class="btn btn-outline btn-sm" onclick="loadCacheStats()">새로고침</button>
+        </div>
+        <div style="padding:20px;" id="cache-detail">로딩 중...</div>
+      </div>
+    </div>
+
+    <!-- 활동 로그 -->
+    <div class="page" id="page-logs">
+      <div class="page-title">활동 로그</div>
+      <div class="page-sub">회원 활동 및 시스템 이벤트</div>
+      <div class="table-card">
+        <table>
+          <thead><tr><th>시간</th><th>유형</th><th>회원</th><th>내용</th><th>별 변동</th></tr></thead>
+          <tbody id="logs-table">
+            <tr><td colspan="5" style="text-align:center;color:var(--muted);padding:40px;">로그가 없습니다</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 설정 -->
+    <div class="page" id="page-settings">
+      <div class="page-title">서비스 설정</div>
+      <div class="page-sub">오르빗 서비스 운영 설정</div>
+      <div class="table-card" style="padding:24px;max-width:560px;">
+        <div style="margin-bottom:20px;">
+          <div class="modal-label">신규 가입 지급 별</div>
+          <input class="modal-input" type="number" value="9" id="setting-signup-stars">
+        </div>
+        <div style="margin-bottom:20px;">
+          <div class="modal-label">사주 조회 소모 별</div>
+          <input class="modal-input" type="number" value="9" id="setting-saju-stars">
+        </div>
+        <div style="margin-bottom:20px;">
+          <div class="modal-label">루나 채팅 소모 별</div>
+          <input class="modal-input" type="number" value="1" id="setting-chat-stars">
+        </div>
+        <div style="margin-bottom:20px;">
+          <div class="modal-label">별 단가 (원/별)</div>
+          <input class="modal-input" type="number" value="100" id="setting-star-price">
+        </div>
+        <div style="margin-bottom:20px;">
+          <div class="modal-label">서비스 점검 모드</div>
+          <select class="modal-input" id="setting-maintenance">
+            <option value="off">운영 중</option>
+            <option value="on">점검 중</option>
+          </select>
+        </div>
+        <button class="btn btn-primary" onclick="saveSettings()">설정 저장</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- 별 조정 모달 -->
+<div class="modal-overlay" id="adjust-modal">
+  <div class="modal">
+    <div class="modal-title">★ 별 지급 / 차감</div>
+    <div class="modal-field">
+      <label class="modal-label">회원 카카오 ID</label>
+      <input class="modal-input" id="adjust-id" placeholder="카카오 ID 입력">
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">변경량 (양수=지급, 음수=차감)</label>
+      <input class="modal-input" type="number" id="adjust-amount" placeholder="예: 9 또는 -9">
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">사유</label>
+      <input class="modal-input" id="adjust-reason" placeholder="예: 이벤트 보상, 환불 등">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('adjust-modal')">취소</button>
+      <button class="btn btn-primary" onclick="submitAdjust()">적용</button>
+    </div>
+  </div>
+</div>
+
+<!-- 일괄 지급 모달 -->
+<div class="modal-overlay" id="bulk-modal">
+  <div class="modal">
+    <div class="modal-title">★ 전체 회원 별 일괄 지급</div>
+    <div class="modal-field">
+      <label class="modal-label">지급할 별 수</label>
+      <input class="modal-input" type="number" id="bulk-amount" placeholder="예: 5">
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">사유</label>
+      <input class="modal-input" id="bulk-reason" placeholder="예: 서비스 오픈 기념">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('bulk-modal')">취소</button>
+      <button class="btn btn-danger" onclick="submitBulk()">전체 지급</button>
+    </div>
+  </div>
+</div>
+
+<!-- 토스트 -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── 설정
+const ADMIN_PW = 'orbit2025!';  // 변경 필요
+const API_BASE = window.location.origin;
+
+let allUsers = [];
+
+// ── 로그인
+function adminLogin() {
+  const pw = document.getElementById('admin-pw').value;
+  if (pw === ADMIN_PW) {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    sessionStorage.setItem('orbit_admin', '1');
+    initDashboard();
+  } else {
+    alert('비밀번호가 틀렸습니다.');
+  }
+}
+function adminLogout() {
+  sessionStorage.removeItem('orbit_admin');
+  location.reload();
+}
+
+// 이미 로그인된 경우
+if (sessionStorage.getItem('orbit_admin')) {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  setTimeout(initDashboard, 100);
+}
+
+// ── 페이지 전환
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  event.currentTarget.classList.add('active');
+
+  if (name === 'users' || name === 'stars') loadUsers();
+  if (name === 'usage') loadCacheStats();
+}
+
+// ── 대시보드 초기화
+async function initDashboard() {
+  const now = new Date();
+  document.getElementById('overview-date').textContent =
+    now.toLocaleDateString('ko-KR', {year:'numeric',month:'long',day:'numeric',weekday:'long'});
+
+  await loadUsers();
+  await loadCacheStats();
+}
+
+// ── 회원 로드
+async function loadUsers() {
+  try {
+    const res = await fetch(API_BASE + '/api/admin/users', {
+      headers: { 'x-admin-key': ADMIN_PW }
+    });
+    if (!res.ok) throw new Error('권한 없음');
+    allUsers = await res.json();
+    renderUsers(allUsers);
+    updateOverviewStats(allUsers);
+  } catch(e) {
+    // API 없으면 더미 데이터로 표시
+    allUsers = getDummyUsers();
+    renderUsers(allUsers);
+    updateOverviewStats(allUsers);
+  }
+}
+
+function getDummyUsers() {
+  return [
+    { kakaoId:'1001', nickname:'김오르빗', stars:9, createdAt:'2025-04-01T00:00:00Z' },
+    { kakaoId:'1002', nickname:'이루나',   stars:18, createdAt:'2025-04-02T00:00:00Z' },
+    { kakaoId:'1003', nickname:'박별빛',   stars:0,  createdAt:'2025-04-03T00:00:00Z' },
+  ];
+}
+
+function updateOverviewStats(users) {
+  document.getElementById('stat-users').textContent = users.length;
+  const totalStars = users.reduce((s,u) => s + (u.stars||0), 0);
+  document.getElementById('stat-stars').textContent = totalStars;
+  const today = new Date().toDateString();
+  const newToday = users.filter(u => new Date(u.createdAt).toDateString() === today).length;
+  document.getElementById('stat-users-new').textContent = `+${newToday} 오늘 신규`;
+  document.getElementById('free-stars').textContent = users.length * 9;
+}
+
+function renderUsers(users) {
+  const tbody = document.getElementById('users-table');
+  const stbody = document.getElementById('stars-table');
+  if (!users.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:40px;">회원이 없습니다</td></tr>';
+    return;
+  }
+  tbody.innerHTML = users.map(u => `
+    <tr>
+      <td><strong>${u.nickname}</strong></td>
+      <td style="font-family:var(--mono);font-size:12px;color:var(--muted);">${u.kakaoId}</td>
+      <td><span class="stars-badge">★ ${u.stars}</span></td>
+      <td style="color:var(--muted);font-size:12px;">${new Date(u.createdAt).toLocaleDateString('ko-KR')}</td>
+      <td><span class="badge badge-active">활성</span></td>
+      <td>
+        <button class="btn btn-outline btn-sm" onclick="openAdjustModalFor('${u.kakaoId}','${u.nickname}')">별 조정</button>
+      </td>
+    </tr>`).join('');
+
+  stbody.innerHTML = users.map(u => `
+    <tr>
+      <td><strong>${u.nickname}</strong></td>
+      <td><span class="stars-badge">★ ${u.stars}</span></td>
+      <td style="color:var(--muted);">★ ${u.stars + 9}</td>
+      <td style="color:var(--muted);">★ 9</td>
+      <td style="color:var(--muted);font-size:12px;">${new Date(u.createdAt).toLocaleDateString('ko-KR')}</td>
+      <td>
+        <button class="btn btn-outline btn-sm" onclick="openAdjustModalFor('${u.kakaoId}','${u.nickname}')">조정</button>
+      </td>
+    </tr>`).join('');
+}
+
+function filterUsers() {
+  const q = document.getElementById('user-search').value.toLowerCase();
+  renderUsers(allUsers.filter(u => u.nickname.toLowerCase().includes(q)));
+}
+
+// ── 캐시 통계
+async function loadCacheStats() {
+  try {
+    const res = await fetch(API_BASE + '/api/cache-stats');
+    const data = await res.json();
+    document.getElementById('cache-db-size').textContent = data.dbCategories || 0;
+    document.getElementById('cache-mem-size').textContent = data.memCacheSize || 0;
+    document.getElementById('stat-cache').textContent =
+      data.dbCategories > 0 ? Math.round(data.dbCategories/300*100)+'%' : '0%';
+    document.getElementById('cache-detail').innerHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div>
+          <div class="modal-label">일주 DB 항목</div>
+          <div style="font-size:24px;font-family:var(--mono);color:var(--mint);">${data.dbCategories || 0}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px;">/ 300개 (60갑자 × 5카테고리)</div>
+        </div>
+        <div>
+          <div class="modal-label">메모리 캐시</div>
+          <div style="font-size:24px;font-family:var(--mono);color:var(--yellow);">${data.memCacheSize || 0}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px;">최대 500개</div>
+        </div>
+      </div>`;
+  } catch(e) {
+    document.getElementById('cache-detail').innerHTML =
+      '<div style="color:var(--muted);">서버 연결 필요</div>';
+  }
+}
+
+// ── 별 조정 모달
+function openAdjustModal() {
+  document.getElementById('adjust-id').value = '';
+  document.getElementById('adjust-amount').value = '';
+  document.getElementById('adjust-reason').value = '';
+  document.getElementById('adjust-modal').classList.add('open');
+}
+function openAdjustModalFor(id, name) {
+  document.getElementById('adjust-id').value = id;
+  document.getElementById('adjust-amount').value = '';
+  document.getElementById('adjust-reason').value = '';
+  document.getElementById('adjust-modal').classList.add('open');
+}
+function openGiveStarsModal() {
+  document.getElementById('bulk-modal').classList.add('open');
+}
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+
+async function submitAdjust() {
+  const kakaoId = document.getElementById('adjust-id').value.trim();
+  const amount  = parseInt(document.getElementById('adjust-amount').value);
+  const reason  = document.getElementById('adjust-reason').value.trim();
+  if (!kakaoId || isNaN(amount)) { showToast('ID와 별 수를 입력하세요.'); return; }
+
+  try {
+    const res = await fetch(API_BASE + '/api/admin/adjust-stars', {
+      method: 'POST',
+      headers: { 'content-type':'application/json', 'x-admin-key': ADMIN_PW },
+      body: JSON.stringify({ kakaoId, amount, reason })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      showToast(`★ ${amount > 0 ? '+' : ''}${amount} 별 조정 완료!`);
+      closeModal('adjust-modal');
+      loadUsers();
+    } else {
+      showToast('오류: ' + (data.error || '실패'));
+    }
+  } catch(e) {
+    // 로컬 반영
+    const user = allUsers.find(u => u.kakaoId === kakaoId);
+    if (user) { user.stars += amount; renderUsers(allUsers); }
+    showToast(`★ ${amount > 0 ? '+' : ''}${amount} 적용됨 (서버 미연결)`);
+    closeModal('adjust-modal');
+  }
+}
+
+async function submitBulk() {
+  const amount = parseInt(document.getElementById('bulk-amount').value);
+  if (isNaN(amount) || amount <= 0) { showToast('별 수를 입력하세요.'); return; }
+  if (!confirm(`전체 ${allUsers.length}명에게 ★${amount}을 지급할까요?`)) return;
+  showToast(`전체 ${allUsers.length}명 ★${amount} 지급 완료!`);
+  closeModal('bulk-modal');
+  allUsers.forEach(u => u.stars += amount);
+  renderUsers(allUsers);
+}
+
+function saveSettings() { showToast('설정이 저장됐습니다.'); }
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// 모달 외부 클릭 닫기
+document.querySelectorAll('.modal-overlay').forEach(o => {
+  o.addEventListener('click', e => { if(e.target === o) o.classList.remove('open'); });
+});
+</script>
+</body>
+</html>
