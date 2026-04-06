@@ -11,7 +11,7 @@ const fs   = require('fs');
 const path = require('path');
 
 // ── API 키 직접 입력 (환경변수 우선)
-const API_KEY_DIRECT = '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'; // ← 여기에 키 입력
+const API_KEY_DIRECT = ''; // ← 여기에 키 입력
 
 const API_KEY = (process.env.ANTHROPIC_API_KEY || API_KEY_DIRECT).trim().replace(/[\r\n\t]/g, '');
 if (!API_KEY) {
