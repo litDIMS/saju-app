@@ -783,6 +783,21 @@ nav {
 @media(max-width:768px) {
   .tab-nav-footer { display:flex; }
 }
+
+/* ── 루나 이미지 페이드인 ── */
+.luna-img {
+  width:160px; height:160px;
+  object-fit:contain;
+  filter:drop-shadow(0 0 24px rgba(75,48,119,0.5));
+  opacity:0;
+  transform:translateY(12px) scale(0.95);
+  transition:opacity 0.7s cubic-bezier(.22,1,.36,1),
+             transform 0.7s cubic-bezier(.22,1,.36,1);
+}
+.luna-img.loaded {
+  opacity:1;
+  transform:translateY(0) scale(1);
+}
 </style>
 </head>
 <body>
@@ -828,7 +843,7 @@ nav {
     <div class="hero">
       <!-- 루나 이미지 -->
       <div class="hero-symbol" style="display:flex;justify-content:center;margin-bottom:8px;">
-        <img src="/Luna.png" alt="루나" style="width:160px;height:160px;object-fit:contain;filter:drop-shadow(0 0 24px rgba(75,48,119,0.5));" onerror="this.style.display='none'">
+        <img src="/Luna.png" alt="루나" class="luna-img" onload="this.classList.add('loaded')" onerror="this.style.display='none'">
       </div>
       <h1>오르빗이 당신의 운명궤도를<br>읽어줄게요</h1>
       <p>오르빗의 마스코트 루나가 당신의 생년월일시로<br>사주원국과 오행의 기운을 해석해드릴게요</p>
