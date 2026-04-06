@@ -422,6 +422,7 @@ nav {
 
 /* 세운 화면 */
 #sewoon { padding:90px 40px 80px; max-width:880px; margin:0 auto; }
+#sewoon > div { position:relative; min-height:400px; }
 .sewoon-year-grid {
   display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin-bottom:20px;
 }
@@ -1052,6 +1053,55 @@ nav {
 }
 .user-dropdown-item:hover { background:rgba(26,20,16,0.06); }
 .user-dropdown-item.logout { color:#c0392b; }
+
+/* ── 세운 잠금 UI ── */
+.sewoon-lock-overlay {
+  position:absolute; inset:0;
+  background:rgba(26,26,46,0.85);
+  backdrop-filter:blur(6px);
+  border-radius:16px;
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  z-index:10; gap:16px;
+  animation:fadeIn .3s ease;
+}
+.sewoon-lock-icon {
+  font-size:48px; line-height:1;
+}
+.sewoon-lock-title {
+  font-family:'Noto Serif KR',serif;
+  font-size:20px; font-weight:600;
+  color:#F8F9FA; text-align:center;
+}
+.sewoon-lock-desc {
+  font-size:13px; color:#A0A0C0;
+  text-align:center; line-height:1.7;
+  max-width:280px;
+}
+.sewoon-lock-badge {
+  background:rgba(255,215,0,0.12);
+  border:1px solid rgba(255,215,0,0.3);
+  border-radius:99px; padding:6px 18px;
+  font-size:13px; font-weight:600;
+  color:#FFD700;
+}
+.sewoon-unlock-btn {
+  background:linear-gradient(135deg,#4B3077,#00C4A0);
+  color:#fff; border:none; border-radius:12px;
+  padding:14px 32px; font-size:14px; font-weight:600;
+  cursor:pointer; font-family:'Noto Sans KR',sans-serif;
+  transition:opacity .2s; box-shadow:0 4px 20px rgba(0,196,160,0.3);
+}
+.sewoon-unlock-btn:hover { opacity:.9; }
+.sewoon-login-btn {
+  background:rgba(255,255,255,0.08);
+  color:#A0A0C0; border:1px solid rgba(255,255,255,0.1);
+  border-radius:12px; padding:10px 24px;
+  font-size:13px; cursor:pointer;
+  font-family:'Noto Sans KR',sans-serif;
+  transition:all .2s;
+}
+.sewoon-login-btn:hover { color:#F8F9FA; border-color:rgba(255,255,255,0.2); }
 </style>
 </head>
 <body>
@@ -1314,7 +1364,7 @@ nav {
     <div style="display:flex;gap:12px;justify-content:center;margin-top:12px;flex-wrap:wrap;">
       <button class="share-btn" style="background:var(--gold-pale);color:#1a1410;" onclick="showScreen('sewoon')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-        세운·년운 보기
+        ★ 세운·년운 보기
       </button>
       <button class="share-btn" style="background:var(--gold-pale);color:#1a1410;" onclick="showScreen('gunghap')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
@@ -1856,6 +1906,72 @@ function updateTabNavButtons(idx) {
   }
 }
 
+
+
+// ══════════════════════════════════════════════
+// 세운 잠금/해제 (별 9개 소모)
+// ══════════════════════════════════════════════
+let sewoonUnlocked = false;
+const SEWOON_COST = 9;
+
+function initSewoonLock() {
+  const overlay = document.getElementById('sewoon-lock-overlay');
+  const unlockBtn = document.getElementById('sewoon-unlock-btn');
+  const loginBtn = document.getElementById('sewoon-login-btn');
+  if (!overlay) return;
+
+  if (sewoonUnlocked) {
+    overlay.style.display = 'none';
+    return;
+  }
+
+  overlay.style.display = 'flex';
+
+  if (!currentUser) {
+    // 비로그인 상태
+    unlockBtn.style.display = 'none';
+    loginBtn.style.display = 'block';
+  } else if (currentUser.stars < SEWOON_COST) {
+    // 별 부족
+    unlockBtn.textContent = `별이 부족해요 (현재 ★${currentUser.stars})`;
+    unlockBtn.style.opacity = '0.5';
+    unlockBtn.onclick = () => showChargeModal();
+  } else {
+    // 별 충분
+    unlockBtn.textContent = `★ ${SEWOON_COST}개로 세운 보기`;
+    unlockBtn.style.opacity = '1';
+    unlockBtn.onclick = () => unlockSewoon();
+  }
+}
+
+async function unlockSewoon() {
+  if (!currentUser) { loginKakao(); return; }
+  if (sewoonUnlocked) return;
+
+  if (currentUser.stars < SEWOON_COST) {
+    showChargeModal();
+    return;
+  }
+
+  if (!confirm(`별 ${SEWOON_COST}개를 사용해서 세운을 볼까요?\n(현재 잔액: ★${currentUser.stars})`)) return;
+
+  // 별 차감 (나중에 서버 API로 연동)
+  currentUser.stars -= SEWOON_COST;
+  updateLoginUI(currentUser);
+
+  // 잠금 해제
+  sewoonUnlocked = true;
+  const overlay = document.getElementById('sewoon-lock-overlay');
+  if (overlay) {
+    overlay.style.animation = 'fadeOut .3s ease forwards';
+    setTimeout(() => overlay.style.display = 'none', 300);
+  }
+
+  showToastAdmin(`★ ${SEWOON_COST}개 사용됨. 잔액: ★${currentUser.stars}`);
+}
+
+// showScreen 후크 - 세운 화면 진입 시 잠금 확인
+const _origShowScreen = showScreen;
 
 function showScrollHint() {
   const hint = document.getElementById('scroll-hint');
@@ -3910,6 +4026,47 @@ function selectSewoonYear(year, stem, branch, btn) {
   loadSewoonTab('overall', year, stem, branch);
 }
 
+
+// ── 세운 캐시 (localStorage)
+const LS_SEWOON = 'orbit_sewoon_v1';
+const SEWOON_CACHE_DAYS = 30; // 30일 보관
+
+function getSewoonCacheKey(dayPillar, year, tab) {
+  return dayPillar + '_' + year + '_' + tab;
+}
+
+function saveSewoonCache(dayPillar, year, tab, text) {
+  try {
+    const stored = JSON.parse(localStorage.getItem(LS_SEWOON) || '{}');
+    const key = getSewoonCacheKey(dayPillar, year, tab);
+    stored[key] = { text, ts: Date.now() };
+    // 오래된 항목 정리 (50개 초과 시)
+    const keys = Object.keys(stored);
+    if (keys.length > 50) {
+      keys.sort((a,b) => stored[a].ts - stored[b].ts)
+          .slice(0, keys.length - 50)
+          .forEach(k => delete stored[k]);
+    }
+    localStorage.setItem(LS_SEWOON, JSON.stringify(stored));
+  } catch(e) {}
+}
+
+function loadSewoonCache(dayPillar, year, tab) {
+  try {
+    const stored = JSON.parse(localStorage.getItem(LS_SEWOON) || '{}');
+    const key = getSewoonCacheKey(dayPillar, year, tab);
+    const entry = stored[key];
+    if (!entry) return null;
+    // 30일 만료
+    if (Date.now() - entry.ts > SEWOON_CACHE_DAYS * 24 * 60 * 60 * 1000) {
+      delete stored[key];
+      localStorage.setItem(LS_SEWOON, JSON.stringify(stored));
+      return null;
+    }
+    return entry.text;
+  } catch(e) { return null; }
+}
+
 async function loadSewoonTab(tab, year, stem, branch) {
   if (sewoonTabCache[tab]) return;
   sewoonTabCache[tab] = true;
@@ -3917,6 +4074,14 @@ async function loadSewoonTab(tab, year, stem, branch) {
   const el = document.getElementById('swtab-' + tab);
   const c = currentChart;
   const age = year - c.year;
+  const dayPillar = c.dp.stem.kr + c.dp.branch.kr;
+
+  // 1순위: localStorage 캐시
+  const cachedText = loadSewoonCache(dayPillar, year, tab);
+  if (cachedText) {
+    showAIResult(el, cachedText, 'sw'+tab);
+    return;
+  }
 
   const baseCtx = `
 【원국 정보】
@@ -3962,12 +4127,52 @@ ${baseCtx}
     wealth:  ['재물운을 분석하는 중...', '금전운을 풀이하는 중...', '해석을 완성하는 중...'],
     health:  ['건강운을 분석하는 중...', '체질을 풀이하는 중...', '해석을 완성하는 중...'],
   };
+  // 2순위: 서버 캐시 조회
+  try {
+    const serverRes = await fetch('/api/interpret', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        dayPillar: 'sewoon_' + dayPillar + '_' + year,
+        elProfile: '',
+        category: tab,
+      })
+    });
+    if (serverRes.ok) {
+      const serverData = await serverRes.json();
+      if (serverData.text) {
+        showAIResult(el, serverData.text, 'sw'+tab);
+        saveSewoonCache(dayPillar, year, tab, serverData.text);
+        return;
+      }
+    }
+  } catch(e) {}
+
   const timer = showAILoading(el, swMsgs[tab]);
 
   try {
     const fullText = await fetchAI(prompts[tab], 4000);
     clearInterval(timer);
     showAIResult(el, fullText || '분석을 불러오지 못했습니다.', 'sw'+tab);
+
+    // localStorage에 캐시 저장
+    if (fullText) {
+      saveSewoonCache(dayPillar, year, tab, fullText);
+    }
+
+    // 서버 캐시에도 저장 (다음 사용자 재사용)
+    if (fullText && currentChart) {
+      fetch('/api/cache-save', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          dayPillar: 'sewoon_' + dayPillar + '_' + year,
+          elProfile: '',
+          category: tab,
+          text: fullText,
+        })
+      }).catch(() => {});
+    }
   } catch(e) {
     clearInterval(timer);
     sewoonTabCache[tab] = false;
