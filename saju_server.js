@@ -89,7 +89,7 @@ const server = http.createServer((req, res) => {
         return;
       }
 
-      parsed.model = 'claude-sonnet-4-5';
+      parsed.model = 'claude-haiku-4-5-20251001';
       const finalBody = JSON.stringify(parsed);
 
       const options = {
