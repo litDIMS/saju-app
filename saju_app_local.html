@@ -974,6 +974,62 @@ nav {
   0%, 100% { opacity: 1; }
   50% { opacity: 0; }
 }
+
+/* ── 카카오 로그인 UI ── */
+.login-bar {
+  display:flex; align-items:center; gap:10px;
+  padding:0 8px;
+}
+.kakao-login-btn {
+  display:flex; align-items:center; gap:7px;
+  background:#FEE500; color:#191919;
+  border:none; border-radius:8px;
+  padding:7px 14px; font-size:12px; font-weight:600;
+  cursor:pointer; transition:opacity .2s;
+  font-family:'Noto Sans KR',sans-serif;
+  white-space:nowrap;
+}
+.kakao-login-btn:hover { opacity:.85; }
+.kakao-login-btn svg { width:16px; height:16px; flex-shrink:0; }
+
+/* 로그인 후 프로필 */
+.user-profile {
+  display:flex; align-items:center; gap:8px;
+  cursor:pointer; position:relative;
+}
+.user-avatar {
+  width:30px; height:30px; border-radius:50%;
+  background:#4B3077; display:flex; align-items:center;
+  justify-content:center; font-size:12px; color:#fff;
+  font-weight:600; overflow:hidden; flex-shrink:0;
+  border:2px solid rgba(0,196,160,0.4);
+}
+.user-avatar img { width:100%; height:100%; object-fit:cover; }
+.user-name { font-size:12px; color:#F8F9FA; font-weight:500; }
+.user-stars {
+  font-size:11px; color:#FFD700; font-weight:600;
+  background:rgba(255,215,0,0.12);
+  border:1px solid rgba(255,215,0,0.25);
+  border-radius:99px; padding:2px 8px;
+}
+.user-dropdown {
+  position:absolute; top:calc(100% + 10px); right:0;
+  background:#f5f0e8; border:1px solid rgba(26,20,16,0.1);
+  border-radius:12px; padding:8px;
+  min-width:160px; box-shadow:0 8px 24px rgba(0,0,0,0.15);
+  z-index:200; display:none;
+  animation:fadeIn .15s ease;
+}
+.user-dropdown.open { display:block; }
+.user-dropdown-item {
+  display:block; width:100%; padding:10px 14px;
+  background:none; border:none; border-radius:8px;
+  font-size:13px; color:#1a1410; text-align:left;
+  cursor:pointer; font-family:'Noto Sans KR',sans-serif;
+  transition:background .15s;
+}
+.user-dropdown-item:hover { background:rgba(26,20,16,0.06); }
+.user-dropdown-item.logout { color:#c0392b; }
 </style>
 </head>
 <body>
@@ -997,6 +1053,25 @@ nav {
     <li><a onclick="if(currentChart)showScreen('sewoon')">세운</a></li>
     <li><a onclick="if(currentChart)showScreen('gunghap')">궁합</a></li>
   </ul>
+  <div class="login-bar" id="login-bar">
+    <!-- 로그인 전 -->
+    <button class="kakao-login-btn" id="kakao-login-btn" onclick="loginKakao()">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.477 3 2 6.477 2 10.8c0 2.7 1.6 5.1 4 6.6l-1 3.7 4.3-2.8c.9.1 1.8.2 2.7.2 5.523 0 10-3.477 10-7.7S17.523 3 12 3z"/></svg>
+      카카오 로그인
+    </button>
+    <!-- 로그인 후 (숨김) -->
+    <div class="user-profile" id="user-profile" style="display:none;" onclick="toggleUserDropdown()">
+      <div class="user-avatar" id="user-avatar">
+        <span id="user-avatar-text">?</span>
+      </div>
+      <span class="user-name" id="user-name-text"></span>
+      <span class="user-stars" id="user-stars-text">★ 0</span>
+      <div class="user-dropdown" id="user-dropdown">
+        <button class="user-dropdown-item" onclick="event.stopPropagation();showChargeModal()">★ 별 충전하기</button>
+        <button class="user-dropdown-item logout" onclick="event.stopPropagation();logoutUser()">로그아웃</button>
+      </div>
+    </div>
+  </div>
 </nav>
 
 
@@ -2412,7 +2487,7 @@ async function loadTabInterpretation(category) {
   if (tabCache[category]) return;
   tabCache[category] = true;
 
-  // 저장된 해석 먼저 확인
+  // 1순위: localStorage 캐시
   const savedInterps = loadInterpFromStorage();
   if (savedInterps[category]) {
     showAIResult(container, savedInterps[category], category);
@@ -3892,8 +3967,107 @@ function switchSewoonTab(name, btn) {
 
 
 
+
+// ══════════════════════════════════════════════
+// 카카오 로그인 / 사용자 관리
+// ══════════════════════════════════════════════
+let currentUser = null;
+
+function loginKakao() {
+  window.location.href = '/auth/kakao';
+}
+
+function logoutUser() {
+  localStorage.removeItem('orbit_token');
+  currentUser = null;
+  updateLoginUI(null);
+  document.getElementById('user-dropdown').classList.remove('open');
+}
+
+function toggleUserDropdown() {
+  document.getElementById('user-dropdown').classList.toggle('open');
+}
+// 외부 클릭 시 드롭다운 닫기
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.user-profile')) {
+    document.getElementById('user-dropdown')?.classList.remove('open');
+  }
+});
+
+function updateLoginUI(user) {
+  const loginBtn  = document.getElementById('kakao-login-btn');
+  const profileEl = document.getElementById('user-profile');
+  if (!user) {
+    loginBtn.style.display  = 'flex';
+    profileEl.style.display = 'none';
+    return;
+  }
+  loginBtn.style.display  = 'none';
+  profileEl.style.display = 'flex';
+
+  // 아바타
+  const avatarText = document.getElementById('user-avatar-text');
+  const avatar     = document.getElementById('user-avatar');
+  if (user.imgUrl) {
+    avatar.innerHTML = `<img src="${user.imgUrl}" alt="${user.nickname}" onerror="this.parentElement.innerHTML='<span>${user.nickname[0]}</span>'">`;
+  } else {
+    avatarText.textContent = user.nickname[0] || '?';
+  }
+  document.getElementById('user-name-text').textContent  = user.nickname;
+  document.getElementById('user-stars-text').textContent = `★ ${user.stars}`;
+}
+
+async function fetchUserInfo(token) {
+  try {
+    const res = await fetch('/api/me', {
+      headers: { Authorization: 'Bearer ' + token }
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch(e) { return null; }
+}
+
+async function initAuth() {
+  // URL에서 토큰 확인 (카카오 콜백 후)
+  const params = new URLSearchParams(window.location.search);
+  const tokenFromUrl = params.get('token');
+  const loginFail    = params.get('login');
+
+  if (tokenFromUrl) {
+    localStorage.setItem('orbit_token', tokenFromUrl);
+    // URL 정리
+    window.history.replaceState({}, '', '/');
+  }
+  if (loginFail === 'fail') {
+    alert('로그인에 실패했어요. 다시 시도해달라옹!');
+    window.history.replaceState({}, '', '/');
+    return;
+  }
+
+  // 저장된 토큰으로 로그인 상태 복원
+  const token = localStorage.getItem('orbit_token');
+  if (!token) return;
+
+  const user = await fetchUserInfo(token);
+  if (user) {
+    currentUser = user;
+    updateLoginUI(user);
+    console.log(`[로그인] ${user.nickname} (★${user.stars})`);
+  } else {
+    localStorage.removeItem('orbit_token');
+  }
+}
+
+function showChargeModal() {
+  document.getElementById('user-dropdown').classList.remove('open');
+  alert('별 충전 기능은 준비 중이라옹!\nToss 결제 연동 후 오픈 예정이에요.');
+}
+
+// 페이지 로드 시 인증 초기화
+
 // ── 이전 결과 복원 확인 ──
 window.addEventListener('load', function() {
+  initAuth();
   if (typeof checkShareParams === 'function') checkShareParams();
 
   const saved = restoreFromStorage();
