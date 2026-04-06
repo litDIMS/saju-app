@@ -894,7 +894,8 @@ nav {
       <div class="section">
         <div class="section-title"><span class="dot"></span>오행 분포</div>
         <div class="elements-chart" id="element-chart"></div>
-        <div id="element-labels" style="display:flex;gap:8px;"></div>
+        <div id="element-labels" style="display:flex;gap:8px;margin-bottom:4px;"></div>
+        <div id="el-summary"></div>
       </div>
       <div class="section">
         <div class="section-title"><span class="dot"></span>음양 · 일간 강약</div>
@@ -1604,12 +1605,47 @@ function renderResult(chart) {
       <div class="element-bar ${elCls[i]}" style="height:${Math.max(6, (elCounts[el]/maxEl)*90)}px"></div>
     </div>`
   ).join('');
+  // 오행 특성 설명
+  const EL_DESC = {
+    목: { keyword:'성장·창의', trait:'새로운 시작과 도전을 좋아하는 타입' },
+    화: { keyword:'열정·표현', trait:'감정이 풍부하고 활동적인 에너지' },
+    토: { keyword:'안정·신뢰', trait:'묵묵히 지켜주는 든든한 존재감' },
+    금: { keyword:'결단·완벽', trait:'원칙을 지키고 결과를 중시하는 성향' },
+    수: { keyword:'지혜·직관', trait:'깊이 생각하고 흐름을 읽는 능력' },
+  };
+
+  // 부족/강한 오행 판단
+  const sorted = Object.entries(elCounts).sort((a,b)=>b[1]-a[1]);
+  const strongEl = sorted[0][0];
+  const weakEl   = sorted[sorted.length-1][0];
+
   document.getElementById('element-labels').innerHTML = elKeys.map((el,i) =>
     `<div style="flex:1;text-align:center;">
-      <div style="font-size:11px;color:${EL_COLOR[el]};font-weight:500;">${elCN[i]} ${el}</div>
-      <div style="font-size:12px;color:#8a7e70;">${elCounts[el]}개</div>
+      <div style="font-size:11px;color:${EL_COLOR[el]};font-weight:600;">${elCN[i]} ${el}</div>
+      <div style="font-size:12px;color:#8a7e70;margin-top:2px;">${elCounts[el]}개</div>
+      <div style="font-size:9px;color:${EL_COLOR[el]};opacity:0.7;margin-top:3px;letter-spacing:-0.02em;">${EL_DESC[el].keyword}</div>
     </div>`
   ).join('');
+
+  // 오행 분석 요약 텍스트 추가
+  const elSummaryEl = document.getElementById('el-summary');
+  if (elSummaryEl) {
+    const strongDesc = EL_DESC[strongEl];
+    const weakDesc   = EL_DESC[weakEl];
+    elSummaryEl.innerHTML = `
+      <div style="display:flex;gap:8px;margin-top:14px;padding-top:14px;border-top:1px solid rgba(26,20,16,0.08);flex-wrap:wrap;">
+        <div style="flex:1;min-width:120px;background:rgba(26,20,16,0.03);border-radius:10px;padding:10px 12px;">
+          <div style="font-size:9px;font-weight:600;color:#c9a84c;letter-spacing:0.1em;margin-bottom:4px;">강한 기운</div>
+          <div style="font-size:12px;font-weight:600;color:${EL_COLOR[strongEl]};">${strongEl} — ${strongDesc.keyword}</div>
+          <div style="font-size:11px;color:#8a7e70;margin-top:3px;line-height:1.5;">${strongDesc.trait}</div>
+        </div>
+        <div style="flex:1;min-width:120px;background:rgba(26,20,16,0.03);border-radius:10px;padding:10px 12px;">
+          <div style="font-size:9px;font-weight:600;color:#7f8c9a;letter-spacing:0.1em;margin-bottom:4px;">보완할 기운</div>
+          <div style="font-size:12px;font-weight:600;color:${EL_COLOR[weakEl]};">${weakEl} — ${weakDesc.keyword}</div>
+          <div style="font-size:11px;color:#8a7e70;margin-top:3px;line-height:1.5;">${weakDesc.trait}</div>
+        </div>
+      </div>`;
+  }
 
   // 음양
   const total = yyCounts.yang + yyCounts.yin;
