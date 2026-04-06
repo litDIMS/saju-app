@@ -962,6 +962,18 @@ nav {
   .chat-bubble { max-width:85%; font-size:13px; }
   .luna-chat-messages { max-height:340px; }
 }
+
+/* 루나 스트리밍 커서 */
+.luna-cursor::after {
+  content: '|';
+  color: #c9a84c;
+  animation: cursorBlink .6s step-end infinite;
+  margin-left: 1px;
+}
+@keyframes cursorBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
 </style>
 </head>
 <body>
@@ -2957,37 +2969,74 @@ async function sendLunaMsg(presetText) {
         max_tokens: 400,
         system: systemPrompt,
         messages: lunaChatHistory,
-        stream: false,
+        stream: true,
       })
     });
 
-    const rawText = await lunaRes.text();
-    console.log('[루나 응답 raw]', rawText.slice(0, 200));
+    if (!lunaRes.ok) throw new Error('API ' + lunaRes.status);
 
+    // 타이핑 제거 후 빈 말풍선 생성
+    typing.remove();
+    const bubbleWrap = document.createElement('div');
+    bubbleWrap.className = 'chat-bubble-wrap luna';
+    const now = new Date();
+    const timeStr = now.getHours() + ':' + String(now.getMinutes()).padStart(2,'0');
+    bubbleWrap.innerHTML = `
+      <img src="/Luna.png" alt="루나" class="chat-avatar-sm" onerror="this.style.display='none'">
+      <div>
+        <div class="chat-bubble luna" id="luna-stream-bubble"></div>
+        <div class="chat-time">루나 · ${timeStr}</div>
+      </div>`;
+    const container = document.getElementById('luna-chat-messages');
+    container.appendChild(bubbleWrap);
+
+    const bubbleEl = document.getElementById('luna-stream-bubble');
     let replyText = '';
-    try {
-      const data = JSON.parse(rawText);
-      if (data.content && data.content[0] && data.content[0].text) {
-        replyText = data.content[0].text;
-      } else if (data.error) {
-        console.error('[루나 API 오류]', data.error);
-        replyText = '잠깐 생각 중이라옹... 다시 물어봐달라옹!';
-      } else {
-        console.error('[루나 파싱 실패]', data);
-        replyText = '잠깐 생각 중이라옹... 다시 물어봐달라옹!';
+    let buf = '';
+    const reader = lunaRes.body.getReader();
+    const dec = new TextDecoder();
+
+    // SSE 스트리밍 파싱
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      const lines = buf.split('\n');
+      buf = lines.pop() ?? '';
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed.startsWith('data:')) continue;
+        const raw = trimmed.slice(5).trim();
+        if (!raw || raw === '[DONE]') continue;
+        try {
+          const j = JSON.parse(raw);
+          let chunk = '';
+          if (j.type === 'content_block_delta' && j.delta?.type === 'text_delta') {
+            chunk = j.delta.text ?? '';
+          } else if (j.delta?.text) {
+            chunk = j.delta.text;
+          }
+          if (chunk) {
+            replyText += chunk;
+            // 말풍선에 실시간 업데이트
+                    bubbleEl.innerHTML = replyText.replace(/\n/g, '<br>');
+            bubbleEl.classList.add('luna-cursor');
+            container.scrollTop = container.scrollHeight;
+          }
+        } catch(e) {}
       }
-    } catch(parseErr) {
-      console.error('[루나 JSON 파싱 오류]', parseErr, rawText.slice(0,100));
-      replyText = '잠깐 생각 중이라옹... 다시 물어봐달라옹!';
     }
 
-    // 타이핑 제거 후 답변 표시
-    typing.remove();
-    addChatBubble(replyText, false);
+    // 스트리밍 완료 - 커서 제거
+    bubbleEl.classList.remove('luna-cursor');
+    bubbleEl.id = '';
 
     // 히스토리 저장 (최대 10턴)
-    lunaChatHistory.push({ role: 'assistant', content: replyText });
-    if (lunaChatHistory.length > 20) lunaChatHistory = lunaChatHistory.slice(-20);
+    if (replyText) {
+      lunaChatHistory.push({ role: 'assistant', content: replyText });
+      if (lunaChatHistory.length > 20) lunaChatHistory = lunaChatHistory.slice(-20);
+    }
 
   } catch(e) {
     typing.remove();
