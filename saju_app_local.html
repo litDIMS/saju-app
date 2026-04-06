@@ -429,8 +429,7 @@ nav {
   justify-content:center; padding:48px 20px; gap:20px;
 }
 .ai-loading-symbol {
-  font-family:'Noto Serif KR',serif; font-size:44px; font-weight:900;
-  color:var(--gold); animation:spinSlow 3s linear infinite;
+  display:flex; justify-content:center;
 }
 @keyframes spinSlow { from{transform:rotate(0deg);} to{transform:rotate(360deg);} }
 .ai-loading-dots { display:flex; gap:8px; }
@@ -833,8 +832,15 @@ nav {
 </div>
 
 <div id="loading">
-  <div class="loading-symbol">命</div>
-  <div class="loading-text" id="loading-text">사주를 세우는 중...</div>
+  <div class="loading-symbol">
+    <svg width="72" height="72" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="50" cy="58" rx="46" ry="18" stroke="#4B3077" stroke-width="5" fill="none" transform="rotate(-18 50 58)"/>
+      <path d="M 75 25 A 32 32 0 1 0 78 65" stroke="#00C4A0" stroke-width="7" fill="none" stroke-linecap="round"/>
+      <path d="M78 18 L80 28 L90 30 L80 32 L78 42 L76 32 L66 30 L76 28 Z" fill="#FFD700"/>
+      <circle cx="98" cy="60" r="4" fill="#00C4A0"/>
+    </svg>
+  </div>
+  <div class="loading-text" id="loading-text">마법고양이 루나가 당신의 운명궤도를 파악중</div>
   <div class="loading-sub" id="loading-sub">생년월일로 사주 원국을 계산하고 있습니다</div>
 </div>
 
@@ -1534,7 +1540,7 @@ function startCalc() {
 
   const loading = document.getElementById('loading');
   loading.classList.add('show');
-  document.getElementById('loading-text').textContent = '사주 원국을 계산하는 중...';
+  document.getElementById('loading-text').textContent = '마법고양이 루나가 당신의 운명궤도를 파악중';
   document.getElementById('loading-sub').textContent  = '천간·지지를 배치하고 있습니다';
 
   setTimeout(() => {
@@ -1554,8 +1560,8 @@ function startCalc() {
 
       renderResult(currentChart);
 
-      document.getElementById('loading-text').textContent = 'AI가 풀이를 작성하는 중...';
-      document.getElementById('loading-sub').textContent  = '잠시만 기다려주세요';
+      document.getElementById('loading-text').textContent = '루나가 운명의 실타래를 풀어내는 중...';
+      document.getElementById('loading-sub').textContent  = '조금만 기다려달라냥!';
 
       setTimeout(() => {
         loading.classList.remove('show');
@@ -2044,7 +2050,7 @@ async function loadAllInterpretations() {
   if (fullInterpCache) return;
 
   const allTabs = ['personality','career','love','health','wealth'];
-  const loadingMsgs = ['사주를 분석하는 중...', '오행을 풀이하는 중...', '해석을 완성하는 중...'];
+  const loadingMsgs = ['마법고양이 루나가 당신의 운명궤도를 읽어가는중...', '운명궤도에 안착중...', '당신에게 도움이 될 요소를 찾는중...', '조금만 더 기다려달라냥!'];
   const timers = {};
   allTabs.forEach(t => {
     const container = document.getElementById('tab-' + t);
@@ -2531,11 +2537,18 @@ function showTenGodModal(tgName) {
 
 // ── 공통 AI 호출 (로딩 후 한 번에 표시) ──
 function showAILoading(container, messages) {
-  const msgs = messages || ['풀이를 작성하는 중...', '사주를 분석하는 중...', '해석을 완성하는 중...'];
+  const msgs = messages || ['마법고양이 루나가 당신의 운명궤도를 읽어가는중...', '운명궤도에 안착중...', '당신에게 도움이 될 요소를 찾는중...', '조금만 더 기다려달라냥!'];
   let idx = 0;
   container.innerHTML = `
     <div class="ai-loading-wrap">
-      <div class="ai-loading-symbol">命</div>
+      <div class="ai-loading-symbol">
+      <svg width="44" height="44" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style="animation:spinSlow 3s linear infinite;">
+        <ellipse cx="50" cy="58" rx="46" ry="18" stroke="#4B3077" stroke-width="5" fill="none" transform="rotate(-18 50 58)"/>
+        <path d="M 75 25 A 32 32 0 1 0 78 65" stroke="#00C4A0" stroke-width="7" fill="none" stroke-linecap="round"/>
+        <path d="M78 18 L80 28 L90 30 L80 32 L78 42 L76 32 L66 30 L76 28 Z" fill="#FFD700"/>
+        <circle cx="98" cy="60" r="4" fill="#00C4A0"/>
+      </svg>
+    </div>
       <div class="ai-loading-dots"><span></span><span></span><span></span></div>
       <div class="ai-loading-text" id="ai-load-msg">${msgs[0]}</div>
     </div>`;
@@ -2731,8 +2744,7 @@ async function shareInsta() {
         URL.revokeObjectURL(blobUrl);
         window.location.href = 'instagram://story-camera';
         setTimeout(() => {
-          alert('이미지가 저장됐어요!
-인스타그램 스토리에서 갤러리 이미지를 선택해 공유하세요.');
+          alert('이미지가 저장됐어요!\n인스타그램 스토리에서 갤러리 이미지를 선택해 공유하세요.');
         }, 800);
       }, 500);
       if (btn) btn.innerHTML = origText;
@@ -2749,8 +2761,7 @@ async function shareInsta() {
         URL.revokeObjectURL(blobUrl);
         window.location.href = 'intent://story#Intent;package=com.instagram.android;scheme=https;end';
         setTimeout(() => {
-          alert('이미지가 저장됐어요!
-인스타그램 스토리에서 갤러리 이미지를 선택해 공유하세요.');
+          alert('이미지가 저장됐어요!\n인스타그램 스토리에서 갤러리 이미지를 선택해 공유하세요.');
         }, 1000);
       }, 600);
       if (btn) btn.innerHTML = origText;
@@ -2763,8 +2774,7 @@ async function shareInsta() {
     a.href = url; a.download = 'orbit-saju-story.png';
     a.click();
     URL.revokeObjectURL(url);
-    alert('이미지를 저장했어요!
-인스타그램 앱에서 스토리에 올려보세요.');
+    alert('이미지를 저장했어요!\n인스타그램 앱에서 스토리에 올려보세요.');
 
   } catch(e) {
     if (e.name !== 'AbortError') console.error('공유 오류:', e);
