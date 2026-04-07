@@ -11,7 +11,7 @@ const KAKAO_JS_KEY   = 'c3e324417231b3e49d4b2462e0247904';   // 카카오 JS 키
 const JWT_SECRET     = process.env.JWT_SECRET || 'orbit-secret-2025';
 const REDIRECT_URI   = 'https://4ju.kr/auth/kakao/callback';
 
-// ── 간단한 JWT (외부 라이브러리 없이)
+// -- 간단한 JWT (외부 라이브러리 없이)
 function makeJWT(payload) {
   const header  = Buffer.from(JSON.stringify({alg:'HS256',typ:'JWT'})).toString('base64url');
   const body    = Buffer.from(JSON.stringify({...payload, iat: Math.floor(Date.now()/1000)})).toString('base64url');
@@ -29,7 +29,7 @@ function verifyJWT(token) {
   } catch(e) { return null; }
 }
 
-// ── 사용자 DB (파일 기반)
+// -- 사용자 DB (파일 기반)
 const USERS_FILE = path.join(__dirname, 'users.json');
 let USERS = {};
 if (fs.existsSync(USERS_FILE)) {
@@ -39,10 +39,10 @@ function saveUsers() {
   fs.writeFileSync(USERS_FILE, JSON.stringify(USERS, null, 2));
 }
 
-// ── 사전 생성 해석 DB 로드
+// -- 사전 생성 해석 DB 로드
 let SAJU_DB = {};
 
-// ── 서버 메모리 캐시 (일주+카테고리 → 해석 텍스트)
+// -- 서버 메모리 캐시 (일주+카테고리 -> 해석 텍스트)
 const MEM_CACHE = new Map();
 const MEM_CACHE_MAX = 500;  // 최대 500개 캐싱
 const MEM_CACHE_TTL = 7 * 24 * 60 * 60 * 1000; // 7일
@@ -81,19 +81,19 @@ function loadDBToCache() {
       count++;
     }
   }
-  if (count > 0) console.log(`✅ DB → 메모리 캐시 로드: ${count}개`);
+  if (count > 0) console.log(`[OK] DB -> 메모리 캐시 로드: ${count}개`);
 }
 const DB_FILE = path.join(__dirname, 'saju_data.json');
 if (fs.existsSync(DB_FILE)) {
   try {
     SAJU_DB = JSON.parse(fs.readFileSync(DB_FILE, 'utf-8'));
-    console.log(`✅ 해석 DB 로드: ${Object.keys(SAJU_DB).length}개 일주`);
+    console.log(`[OK] 해석 DB 로드: ${Object.keys(SAJU_DB).length}개 일주`);
     loadDBToCache();
   } catch(e) {
-    console.log('⚠️  해석 DB 로드 실패, 실시간 AI 모드로 운영');
+    console.log('[WARN]  해석 DB 로드 실패, 실시간 AI 모드로 운영');
   }
 } else {
-  console.log('ℹ️  해석 DB 없음, 실시간 AI 모드로 운영');
+  console.log('[INFO]  해석 DB 없음, 실시간 AI 모드로 운영');
 }
 
 const server = http.createServer((req, res) => {
@@ -107,11 +107,11 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // ══════════════════════════════════════════════
+  // ==============================================
   // 카카오 로그인 라우트
-  // ══════════════════════════════════════════════
+  // ==============================================
 
-  // ── /auth/kakao → 카카오 로그인 페이지로 이동
+  // -- /auth/kakao -> 카카오 로그인 페이지로 이동
   if (req.method === 'GET' && req.url === '/auth/kakao') {
     const kakaoAuthUrl = `https://kauth.kakao.com/oauth/authorize?client_id=${KAKAO_REST_KEY}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=code`;
     res.writeHead(302, { Location: kakaoAuthUrl });
@@ -119,7 +119,7 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // ── /auth/kakao/callback → 카카오 인증 후 콜백
+  // -- /auth/kakao/callback -> 카카오 인증 후 콜백
   if (req.method === 'GET' && req.url.startsWith('/auth/kakao/callback')) {
     // URL 파라미터 파싱 (쿼리스트링 직접 파싱)
     const queryStr = req.url.includes('?') ? req.url.split('?')[1] : '';
@@ -134,7 +134,7 @@ const server = http.createServer((req, res) => {
       res.end(); return;
     }
 
-    // code → access_token
+    // code -> access_token
     const tokenParams = {
       grant_type: 'authorization_code',
       client_id: KAKAO_REST_KEY,
@@ -163,7 +163,7 @@ const server = http.createServer((req, res) => {
             res.writeHead(302, { Location: '/?login=fail' }); res.end(); return;
           }
 
-          // access_token → 사용자 정보
+          // access_token -> 사용자 정보
           const userReq = https.request({
             hostname: 'kapi.kakao.com', path: '/v2/user/me', method: 'GET',
             headers: { Authorization: 'Bearer ' + accessToken },
@@ -191,7 +191,7 @@ const server = http.createServer((req, res) => {
                     createdAt: new Date().toISOString(),
                   };
                   saveUsers();
-                  console.log(`[신규가입] ${nickname} (${kakaoId}) → 9별 지급`);
+                  console.log(`[신규가입] ${nickname} (${kakaoId}) -> 9별 지급`);
                 } else {
                   // 프로필 업데이트
                   USERS[kakaoId].nickname = nickname;
@@ -217,7 +217,7 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // ── /api/me → 내 정보 조회 (JWT 인증)
+  // -- /api/me -> 내 정보 조회 (JWT 인증)
   if (req.method === 'GET' && req.url === '/api/me') {
     const auth = req.headers.authorization || '';
     const token = auth.replace('Bearer ', '');
@@ -230,15 +230,15 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // ── /api/logout → 로그아웃 (클라이언트에서 토큰 삭제)
+  // -- /api/logout -> 로그아웃 (클라이언트에서 토큰 삭제)
   if (req.method === 'POST' && req.url === '/api/logout') {
     res.writeHead(200, {'Content-Type':'application/json','Access-Control-Allow-Origin':'*'});
     res.end(JSON.stringify({ok:true}));
     return;
   }
 
-  // ── 정적 이미지 파일 서빙 (Luna.png / luna.png)
-  // ── OG 이미지 서빙
+  // -- 정적 이미지 파일 서빙 (Luna.png / luna.png)
+  // -- OG 이미지 서빙
   if (req.method === 'GET' && req.url === '/og-image.png') {
     const imgPath = path.join(__dirname, 'og-image.png');
     if (fs.existsSync(imgPath)) {
@@ -261,7 +261,7 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // ── /api/interpret → 사전 생성 해석 조회
+  // -- /api/interpret -> 사전 생성 해석 조회
   if (req.method === 'POST' && req.url === '/api/interpret') {
     let body = '';
     req.on('data', chunk => body += chunk);
@@ -288,7 +288,7 @@ const server = http.createServer((req, res) => {
           return;
         }
         
-        // 없으면 404 → 클라이언트가 AI 생성 후 /api/cache-save로 저장
+        // 없으면 404 -> 클라이언트가 AI 생성 후 /api/cache-save로 저장
         res.writeHead(404, { 'Access-Control-Allow-Origin': '*' });
         res.end(JSON.stringify({ error: 'not found', source: 'miss', cacheKey }));
       } catch(e) {
@@ -298,7 +298,7 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // ── /api/cache-save → AI 생성 결과 캐시 저장
+  // -- /api/cache-save -> AI 생성 결과 캐시 저장
   if (req.method === 'POST' && req.url === '/api/cache-save') {
     let body = '';
     req.on('data', chunk => body += chunk);
@@ -329,9 +329,9 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // ══════════════════════════════════════════════
+  // ==============================================
   // 관리자 API
-  // ══════════════════════════════════════════════
+  // ==============================================
   const ADMIN_KEY = process.env.ADMIN_KEY || 'orbit2025!';
 
   function checkAdmin(req, res) {
@@ -344,7 +344,7 @@ const server = http.createServer((req, res) => {
     return true;
   }
 
-  // /admin → 관리자 대시보드 페이지 서빙
+  // /admin -> 관리자 대시보드 페이지 서빙
   if (req.method === 'GET' && req.url === '/admin') {
     const adminFile = path.join(__dirname, 'admin.html');
     if (fs.existsSync(adminFile)) {
@@ -356,7 +356,7 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // /api/admin/users → 전체 회원 목록
+  // /api/admin/users -> 전체 회원 목록
   if (req.method === 'GET' && req.url === '/api/admin/users') {
     if (!checkAdmin(req, res)) return;
     res.writeHead(200, {'Content-Type':'application/json','Access-Control-Allow-Origin':'*'});
@@ -364,7 +364,7 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // /api/admin/adjust-stars → 별 수동 조정
+  // /api/admin/adjust-stars -> 별 수동 조정
   if (req.method === 'POST' && req.url === '/api/admin/adjust-stars') {
     if (!checkAdmin(req, res)) return;
     let body = '';
@@ -387,7 +387,7 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // ── /api/cache-stats → 캐시 현황 조회 (관리자용)
+  // -- /api/cache-stats -> 캐시 현황 조회 (관리자용)
   if (req.method === 'GET' && req.url === '/api/cache-stats') {
     const stats = {
       memCacheSize: MEM_CACHE.size,
@@ -399,7 +399,7 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // ── /api/saju → Anthropic 프록시
+  // -- /api/saju -> Anthropic 프록시
   if (req.method === 'POST' && req.url === '/api/saju') {
     const chunks = [];
     req.on('data', chunk => chunks.push(chunk));
@@ -485,7 +485,7 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // ── 법적 페이지 서빙 (사업자정보/약관/환불)
+  // -- 법적 페이지 서빙 (사업자정보/약관/환불)
   const staticPages = {
     '/business.html': 'business.html',
     '/terms.html': 'terms.html',
@@ -527,16 +527,16 @@ const server = http.createServer((req, res) => {
 
 server.listen(PORT, () => {
   console.log('');
-  console.log('  ╔══════════════════════════════════════╗');
+  console.log('  ╔==========================════════════╗');
   console.log('  ║        사주명리 서버 시작            ║');
-  console.log('  ╚══════════════════════════════════════╝');
+  console.log('  ╚==========================════════════╝');
   console.log('');
-  console.log(`  ✅ 서버 주소: http://localhost:${PORT}`);
+  console.log(`  [OK] 서버 주소: http://localhost:${PORT}`);
   console.log('');
   if (API_KEY === 'YOUR_API_KEY_HERE') {
-    console.log("  ⚠️  API 키 미설정! 'YOUR_API_KEY_HERE' 를 실제 키로 교체하세요.");
+    console.log("  [WARN]  API 키 미설정! 'YOUR_API_KEY_HERE' 를 실제 키로 교체하세요.");
   } else {
-    console.log('  ✅ API 키 확인됨:', API_KEY.slice(0, 18) + '...');
+    console.log('  [OK] API 키 확인됨:', API_KEY.slice(0, 18) + '...');
   }
   console.log('');
   console.log('  종료: Ctrl+C');
