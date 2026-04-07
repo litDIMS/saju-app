@@ -31,6 +31,16 @@ function verifyJWT(token) {
 
 // -- 사용자 DB (파일 기반)
 const USERS_FILE = path.join(__dirname, 'users.json');
+
+// -- 운명의 작대기 DB
+const DESTINY_FILE = path.join(__dirname, 'destiny_db.json');
+let DESTINY_DB = {};
+if (fs.existsSync(DESTINY_FILE)) {
+  try { DESTINY_DB = JSON.parse(fs.readFileSync(DESTINY_FILE, 'utf-8')); } catch(e) {}
+}
+function saveDestinyDB() {
+  fs.writeFileSync(DESTINY_FILE, JSON.stringify(DESTINY_DB, null, 2));
+}
 let USERS = {};
 if (fs.existsSync(USERS_FILE)) {
   try { USERS = JSON.parse(fs.readFileSync(USERS_FILE, 'utf-8')); } catch(e) {}
@@ -104,6 +114,69 @@ const server = http.createServer((req, res) => {
   if (req.method === 'OPTIONS') {
     res.writeHead(204);
     res.end();
+    return;
+  }
+
+
+  // =============================================
+  // 운명의 작대기 API
+  // =============================================
+
+  // GET /api/destiny?ownerKey=xxx - 내 작대기 친구 목록 조회
+  if (req.method === 'GET' && req.url.startsWith('/api/destiny')) {
+    const urlObj = new URL(req.url, 'https://4ju.kr');
+    const ownerKey = urlObj.searchParams.get('ownerKey');
+    if (!ownerKey) { res.writeHead(400); res.end('Bad Request'); return; }
+    const data = DESTINY_DB[ownerKey] || { friends: [], unread: 0 };
+    res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+    res.end(JSON.stringify(data));
+    return;
+  }
+
+  // POST /api/destiny - 친구 조회 시 서버에 저장
+  if (req.method === 'POST' && req.url === '/api/destiny') {
+    let body = '';
+    req.on('data', c => body += c);
+    req.on('end', () => {
+      try {
+        const { ownerKey, friend } = JSON.parse(body);
+        if (!ownerKey || !friend) { res.writeHead(400); res.end('Bad Request'); return; }
+
+        if (!DESTINY_DB[ownerKey]) DESTINY_DB[ownerKey] = { friends: [], unread: 0 };
+
+        // 중복 체크
+        const exists = DESTINY_DB[ownerKey].friends.find(f =>
+          f.year === friend.year && f.month === friend.month && f.day === friend.day
+        );
+        if (!exists) {
+          DESTINY_DB[ownerKey].friends.push({ ...friend, addedAt: new Date().toISOString() });
+          DESTINY_DB[ownerKey].unread = (DESTINY_DB[ownerKey].unread || 0) + 1;
+          saveDestinyDB();
+          console.log('[운명의 작대기] 새 친구 추가:', ownerKey, '->', friend.name || '익명');
+        }
+
+        res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+        res.end(JSON.stringify({ ok: true }));
+      } catch(e) { res.writeHead(400); res.end('Bad Request'); }
+    });
+    return;
+  }
+
+  // POST /api/destiny/read - 읽음 처리
+  if (req.method === 'POST' && req.url === '/api/destiny/read') {
+    let body = '';
+    req.on('data', c => body += c);
+    req.on('end', () => {
+      try {
+        const { ownerKey } = JSON.parse(body);
+        if (DESTINY_DB[ownerKey]) {
+          DESTINY_DB[ownerKey].unread = 0;
+          saveDestinyDB();
+        }
+        res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+        res.end(JSON.stringify({ ok: true }));
+      } catch(e) { res.writeHead(400); res.end('Bad Request'); }
+    });
     return;
   }
 
