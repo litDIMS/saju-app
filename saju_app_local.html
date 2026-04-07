@@ -2034,6 +2034,192 @@ function updateTabNavButtons(idx) {
 
 
 // ══════════════════════════════════════════════
+
+// =============================================
+// 운명의 작대기
+// =============================================
+const DESTINY_KEY = 'orbit_destiny_v1';
+
+function getCompatColor(score) {
+  if (score >= 75) return '#00C4A0';
+  if (score >= 60) return '#4B86C8';
+  if (score >= 50) return '#c9a84c';
+  return '#ef4444';
+}
+
+function getCompatReason(chart, friend) {
+  const gen  = {목:'화',화:'토',토:'금',금:'수',수:'목'};
+  const ctrl = {목:'토',화:'금',토:'수',금:'목',수:'화'};
+  const d1 = chart.dp.stem.el;
+  const d2 = friend.el;
+  const EL = {목:'木목',화:'火화',토:'土토',금:'金금',수:'水수'};
+  const TR  = {목:'창의적이고 도전적인',화:'열정적이고 표현력 강한',
+               토:'안정적이고 신뢰할 수 있는',금:'결단력 있고 완벽한',수:'지혜롭고 직관적인'};
+  if (!d2) return '생년월일 정보가 필요해요.';
+  if (gen[d1] === d2) return EL[d1] + '이 ' + EL[d2] + '를 생해주는 상생 관계예요. ' + TR[d2] + ' 에너지를 서로 북돋워줘요.';
+  if (gen[d2] === d1) return EL[d2] + '이 ' + EL[d1] + '를 생해주는 상생 관계예요. 서로에게 활력을 줘요.';
+  if (d1 === d2) return '두 사람 모두 ' + EL[d1] + ' 에너지! 비슷한 성향으로 공감대가 높아요.';
+  if (ctrl[d1] === d2 || ctrl[d2] === d1) return '긴장감이 있지만 서로 자극이 되는 관계예요. 부딪힐 수 있지만 성장해요.';
+  return '서로 다른 에너지로 균형을 이루는 관계예요.';
+}
+
+function getMyKey(chart) {
+  return chart.year + '_' + chart.month + '_' + chart.day + '_' + chart.dp.stem.kr + chart.dp.branch.kr;
+}
+
+function saveDestinyFriend(myKey, friendData) {
+  try {
+    var stored = JSON.parse(localStorage.getItem(DESTINY_KEY) || '{}');
+    if (!stored[myKey]) stored[myKey] = [];
+    var exists = stored[myKey].find(function(f) {
+      return f.year === friendData.year && f.month === friendData.month && f.day === friendData.day;
+    });
+    if (!exists) stored[myKey].push(friendData);
+    localStorage.setItem(DESTINY_KEY, JSON.stringify(stored));
+  } catch(e) {}
+}
+
+function loadDestinyFriends(myKey) {
+  try {
+    var stored = JSON.parse(localStorage.getItem(DESTINY_KEY) || '{}');
+    return stored[myKey] || [];
+  } catch(e) { return []; }
+}
+
+function renderDestinyStick(chart) {
+  var section = document.getElementById('destiny-section');
+  var meNode  = document.getElementById('destiny-me-node');
+  var friendsEl = document.getElementById('destiny-friends');
+  var explainEl = document.getElementById('destiny-explain');
+  var subEl = document.getElementById('destiny-sub');
+  if (!section || !chart) return;
+
+  section.style.display = 'block';
+  meNode.textContent = chart.name ? chart.name[0] : '나';
+
+  var myKey = getMyKey(chart);
+  var friends = loadDestinyFriends(myKey);
+
+  if (friends.length === 0) {
+    friendsEl.innerHTML = '<div class="destiny-empty">아직 친구 궁합이 없어요<br>아래 버튼으로 공유하면 친구들이 조회할 때 여기 추가돼요!</div>';
+    if (explainEl) explainEl.style.display = 'none';
+    subEl.textContent = '친구들과 공유하면 여기에 궁합이 쌓여요';
+    return;
+  }
+
+  var sorted = friends.slice().sort(function(a,b){ return b.score - a.score; });
+  subEl.textContent = sorted.length + '명의 친구와 궁합을 확인했어요';
+
+  var chartHeight = Math.max(200, sorted.length * 68);
+  var chartEl = document.getElementById('destiny-chart');
+  if (chartEl) chartEl.style.minHeight = chartHeight + 'px';
+  meNode.style.top = (chartHeight / 2) + 'px';
+
+  friendsEl.innerHTML = sorted.map(function(f, i) {
+    var color = getCompatColor(f.score);
+    var isFirst = i === 0;
+    var isLast  = i === sorted.length - 1 && sorted.length > 1;
+    var rankTxt = isFirst ? '최고' : (isLast ? '최저' : '');
+    var barPct  = f.score;
+    return '<div class="destiny-friend-row">' +
+      '<div class="destiny-line-wrap">' +
+        '<div style="position:absolute;left:0;top:-18px;font-size:11px;color:' + color + ';font-weight:600;">' + f.score + '%</div>' +
+        '<div class="destiny-line" style="width:' + barPct + '%;background:' + color + ';"></div>' +
+      '</div>' +
+      '<div class="destiny-friend-node" style="border-color:' + color + ';color:' + color + ';">' +
+        (f.name ? f.name[0] : '?') +
+        (rankTxt ? '<span style="font-size:8px;display:block;">' + rankTxt + '</span>' : '') +
+      '</div>' +
+      '<span style="font-size:12px;color:#8a7e70;min-width:60px;">' + (f.name || '익명') + '</span>' +
+    '</div>';
+  }).join('');
+
+  if (explainEl) {
+    if (sorted.length >= 2) {
+      var best  = sorted[0];
+      var worst = sorted[sorted.length - 1];
+      explainEl.style.display = 'grid';
+      explainEl.innerHTML =
+        '<div class="destiny-explain-card best">' +
+          '<div class="destiny-explain-label" style="color:#00C4A0;">최고 궁합</div>' +
+          '<div class="destiny-explain-name">' + (best.name || '친구') + '</div>' +
+          '<div class="destiny-explain-desc">' + getCompatReason(chart, best) + '</div>' +
+        '</div>' +
+        '<div class="destiny-explain-card worst">' +
+          '<div class="destiny-explain-label" style="color:#ef4444;">주의 궁합</div>' +
+          '<div class="destiny-explain-name">' + (worst.name || '친구') + '</div>' +
+          '<div class="destiny-explain-desc">' + getCompatReason(chart, worst) + '</div>' +
+        '</div>';
+    } else {
+      explainEl.style.display = 'none';
+    }
+  }
+}
+
+function shareDestinyLink() {
+  if (!currentChart) return;
+  var params = new URLSearchParams({
+    y: currentChart.year, m: currentChart.month, d: currentChart.day,
+    h: currentChart.hour !== null ? currentChart.hour : '',
+    g: currentChart.gender, n: currentChart.name || '', mode: 'destiny',
+  });
+  var url = window.location.origin + window.location.pathname + '?' + params.toString();
+  var name = currentChart.name || '나';
+
+  if (window.Kakao && Kakao.isInitialized && Kakao.isInitialized()) {
+    try {
+      Kakao.Share.sendDefault({
+        objectType: 'feed',
+        content: {
+          title: name + '님과의 궁합을 확인해보세요! ⚡',
+          description: '운명의 작대기 — 생년월일만 입력하면 바로 궁합이 나와요',
+          imageUrl: 'https://4ju.kr/og-image.png',
+          link: { mobileWebUrl: url, webUrl: url },
+        },
+        buttons: [{ title: '궁합 확인하기', link: { mobileWebUrl: url, webUrl: url } }],
+      });
+      return;
+    } catch(e) {}
+  }
+  if (navigator.share) {
+    navigator.share({ title: name + '님과의 궁합을 확인해보세요!', url: url }).catch(function(){
+      copyDestinyLink(url);
+    });
+  } else {
+    copyDestinyLink(url);
+  }
+}
+
+function copyDestinyLink(url) {
+  navigator.clipboard.writeText(url).then(function() {
+    alert('링크 복사됐어요!\n친구들에게 공유하면 궁합이 자동으로 쌓여요 ⚡');
+  }).catch(function() {
+    prompt('아래 링크를 복사해서 공유하세요:', url);
+  });
+}
+
+function checkDestinyMode(chart) {
+  var params = new URLSearchParams(window.location.search);
+  if (params.get('mode') !== 'destiny') return;
+
+  var oy = parseInt(params.get('y')), om = parseInt(params.get('m'));
+  var od = parseInt(params.get('d')), on2 = params.get('n') || '';
+  var og = params.get('g') || '남';
+  if (!oy || !om || !od) return;
+
+  var score = calcGunghapScore(
+    { dp: chart.dp },
+    { dp: chart.dp, elCounts: chart.elCounts }
+  ).total;
+
+  var myKey = getMyKey(chart);
+  var ownerFriend = {
+    name: on2 || '공유한 친구', year: oy, month: om, day: od,
+    gender: og, el: '', score: score, addedAt: Date.now(),
+  };
+  saveDestinyFriend(myKey, ownerFriend);
+}
+
 // 세운 잠금/해제 (별 9개 소모)
 // ══════════════════════════════════════════════
 let sewoonUnlocked = false;
