@@ -1102,6 +1102,110 @@ nav {
   transition:all .2s;
 }
 .sewoon-login-btn:hover { color:#F8F9FA; border-color:rgba(255,255,255,0.2); }
+
+/* ── 운명의 작대기 ── */
+.destiny-section {
+  background:#f5f0e8;
+  border:1px solid rgba(26,20,16,0.1);
+  border-radius:16px;
+  padding:24px;
+  margin-bottom:16px;
+}
+.destiny-title {
+  font-family:'Noto Serif KR',serif;
+  font-size:16px; font-weight:600;
+  color:#1a1410; margin-bottom:6px;
+  display:flex; align-items:center; gap:8px;
+}
+.destiny-sub {
+  font-size:12px; color:#8a7e70;
+  margin-bottom:20px;
+}
+.destiny-chart {
+  position:relative;
+  min-height:200px;
+  padding:20px 0;
+}
+.destiny-me {
+  position:absolute;
+  left:0; top:50%; transform:translateY(-50%);
+  width:52px; height:52px; border-radius:50%;
+  background:#1a1410; color:#f5f0e8;
+  display:flex; align-items:center; justify-content:center;
+  font-size:13px; font-weight:600;
+  z-index:10; flex-shrink:0;
+  box-shadow:0 2px 12px rgba(0,0,0,0.2);
+}
+.destiny-friends {
+  margin-left:80px;
+  display:flex; flex-direction:column;
+  gap:20px; position:relative;
+}
+.destiny-friend-row {
+  display:flex; align-items:center; gap:12px;
+  position:relative;
+}
+.destiny-line-wrap {
+  position:relative; flex:1; height:6px;
+}
+.destiny-line {
+  height:5px; border-radius:3px;
+  transition:width 1s cubic-bezier(.34,1.56,.64,1);
+}
+.destiny-pct {
+  font-size:12px; font-weight:600;
+  min-width:36px; text-align:right;
+  color:#1a1410;
+}
+.destiny-friend-node {
+  width:44px; height:44px; border-radius:50%;
+  background:#f5f0e8; border:2px solid;
+  display:flex; align-items:center; justify-content:center;
+  font-size:11px; font-weight:600; flex-shrink:0;
+  cursor:pointer; transition:transform .2s;
+}
+.destiny-friend-node:hover { transform:scale(1.1); }
+.destiny-rank-badge {
+  font-size:9px; padding:1px 6px; border-radius:99px;
+  font-weight:600; margin-left:4px;
+}
+.destiny-best { background:rgba(0,196,160,0.15); color:#00C4A0; border-color:#00C4A0; }
+.destiny-worst { background:rgba(239,68,68,0.1); color:#ef4444; border-color:#ef4444; }
+.destiny-normal { background:rgba(26,20,16,0.06); color:#8a7e70; border-color:rgba(26,20,16,0.15); }
+
+/* 궁합 설명 카드 */
+.destiny-explain {
+  display:grid; grid-template-columns:1fr 1fr; gap:10px;
+  margin-top:20px; padding-top:16px;
+  border-top:1px solid rgba(26,20,16,0.08);
+}
+.destiny-explain-card {
+  border-radius:12px; padding:14px;
+}
+.destiny-explain-card.best { background:rgba(0,196,160,0.08); border:1px solid rgba(0,196,160,0.2); }
+.destiny-explain-card.worst { background:rgba(239,68,68,0.06); border:1px solid rgba(239,68,68,0.15); }
+.destiny-explain-label {
+  font-size:10px; font-weight:600; letter-spacing:0.08em;
+  margin-bottom:6px;
+}
+.destiny-explain-name {
+  font-size:14px; font-weight:600; margin-bottom:6px;
+}
+.destiny-explain-desc { font-size:12px; color:#8a7e70; line-height:1.7; }
+
+.destiny-empty {
+  text-align:center; padding:30px 0;
+  color:#8a7e70; font-size:13px;
+}
+.destiny-add-btn {
+  display:flex; align-items:center; justify-content:center; gap:6px;
+  width:100%; padding:12px;
+  background:rgba(26,20,16,0.04); border:1px dashed rgba(26,20,16,0.2);
+  border-radius:10px; cursor:pointer; font-size:13px; color:#8a7e70;
+  transition:all .2s; margin-top:12px;
+  font-family:'Noto Sans KR',sans-serif;
+}
+.destiny-add-btn:hover { background:#1a1410; color:#f5f0e8; border-color:#1a1410; }
 </style>
 </head>
 <body>
@@ -1296,6 +1400,27 @@ nav {
     <div class="compat-section" id="energy-section">
       <div class="compat-title"><span class="compat-dot"></span>루나의 기운 보충 처방전 </div>
       <div id="energy-tips-wrap"></div>
+    </div>
+
+    <!-- 운명의 작대기 -->
+    <div class="destiny-section" id="destiny-section" style="display:none;">
+      <div class="destiny-title">
+        <span>⚡</span> 운명의 작대기
+      </div>
+      <div class="destiny-sub" id="destiny-sub">친구들과 공유하면 여기에 궁합이 쌓여요</div>
+      <div class="destiny-chart" id="destiny-chart">
+        <div class="destiny-me" id="destiny-me-node">나</div>
+        <div class="destiny-friends" id="destiny-friends"></div>
+      </div>
+      <div class="destiny-explain" id="destiny-explain" style="display:none;"></div>
+      <button class="destiny-add-btn" onclick="shareDestinyLink()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;">
+          <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+          <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
+          <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+        </svg>
+        친구들에게 공유하기 → 궁합 확인
+      </button>
     </div>
 
     <!-- 루나에게 물어보기 -->
@@ -2232,6 +2357,10 @@ function renderResult(chart) {
   renderCompatAndEnergy(chart);
   // 루나 채팅 초기화
   initLunaChat(chart);
+  // 운명의 작대기 렌더링
+  renderDestinyStick(chart);
+  // 운명의 작대기 모드 체크 (친구 링크로 접근 시)
+  checkDestinyMode(chart);
 
   // 탭 초기화
   ['personality','career','love','health','wealth'].forEach(t => {
