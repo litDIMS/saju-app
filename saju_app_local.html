@@ -1235,6 +1235,42 @@ nav {
   font-size:9px; font-weight:700;
   display:flex; align-items:center; justify-content:center;
 }
+
+/* -- 결과 메인 탭 */
+.result-main-tabs {
+  display:flex; gap:0;
+  background:#ede5d4;
+  border-radius:14px;
+  padding:4px;
+  margin-bottom:24px;
+  overflow-x:auto;
+  -webkit-overflow-scrolling:touch;
+}
+.result-main-tabs::-webkit-scrollbar { display:none; }
+.rmt-btn {
+  flex:1; min-width:56px;
+  padding:9px 6px;
+  border:none; background:transparent;
+  border-radius:10px;
+  font-size:12px; font-weight:500;
+  color:#8a7e70; cursor:pointer;
+  transition:all .2s;
+  white-space:nowrap;
+  font-family:'Noto Sans KR',sans-serif;
+  display:flex; flex-direction:column;
+  align-items:center; gap:3px;
+}
+.rmt-btn.active {
+  background:#fff;
+  color:#1a1410;
+  box-shadow:0 2px 8px rgba(26,20,16,0.1);
+}
+.rmt-btn .rmt-icon { font-size:16px; }
+.rmt-btn .rmt-label { font-size:10px; }
+
+/* 결과 서브페이지 */
+.result-subpage { display:none; }
+.result-subpage.active { display:block; }
 </style>
 </head>
 <body>
@@ -1366,29 +1402,57 @@ nav {
       <p id="r-sub">—</p>
     </div>
 
-    <div class="pillars-grid" id="pillars-grid"></div>
+    <!-- 결과 메인 탭 -->
+    <div class="result-main-tabs" id="result-main-tabs">
+      <button class="rmt-btn active" onclick="switchResultPage('origin',this)">
+        <span class="rmt-icon">命</span>
+        <span class="rmt-label">사주원국</span>
+      </button>
+      <button class="rmt-btn" onclick="switchResultPage('interp',this)">
+        <span class="rmt-icon">✨</span>
+        <span class="rmt-label">AI 해석</span>
+      </button>
+      <button class="rmt-btn" onclick="switchResultPage('daewoon',this)">
+        <span class="rmt-icon">🌊</span>
+        <span class="rmt-label">대운</span>
+      </button>
+      <button class="rmt-btn" onclick="switchResultPage('destiny',this)">
+        <span class="rmt-icon">⚡</span>
+        <span class="rmt-label">운명</span>
+      </button>
+      <button class="rmt-btn" onclick="switchResultPage('luna',this)">
+        <span class="rmt-icon">🐱</span>
+        <span class="rmt-label">루나</span>
+      </button>
+    </div>
 
-    <div class="el-yy-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
-      <div class="section">
-        <div class="section-title"><span class="dot"></span>오행 분포</div>
-        <div class="elements-chart" id="element-chart"></div>
-        <div id="element-labels" style="display:flex;gap:8px;margin-bottom:4px;"></div>
-        <div id="el-summary"></div>
-      </div>
-      <div class="section">
-        <div class="section-title"><span class="dot"></span>음양 · 일간 강약</div>
-        <div style="margin-bottom:16px;">
-          <div style="display:flex;justify-content:space-between;font-size:11px;color:#8a7e70;margin-bottom:6px;">
-            <span id="yang-label">양 (陽)</span><span id="yin-label">음 (陰)</span>
-          </div>
-          <div class="yin-yang-bar"><div class="yin-yang-fill" id="yin-yang-fill" style="width:50%"></div></div>
-          <div style="font-size:11px;color:var(--gold);text-align:center;" id="yinyang-desc">—</div>
+    <!-- 서브페이지: 사주원국 -->
+    <div class="result-subpage active" id="rsp-origin">
+      <div class="pillars-grid" id="pillars-grid"></div>
+      <div class="el-yy-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+        <div class="section">
+          <div class="section-title"><span class="dot"></span>오행 분포</div>
+          <div class="elements-chart" id="element-chart"></div>
+          <div id="element-labels" style="display:flex;gap:8px;margin-bottom:4px;"></div>
+          <div id="el-summary"></div>
         </div>
-        <div style="font-size:11px;color:#8a7e70;margin-bottom:10px;">주요 십성</div>
-        <div class="ten-gods-wrap" id="ten-gods-wrap"></div>
+        <div class="section">
+          <div class="section-title"><span class="dot"></span>음양 · 일간 강약</div>
+          <div style="margin-bottom:16px;">
+            <div style="display:flex;justify-content:space-between;font-size:11px;color:#8a7e70;margin-bottom:6px;">
+              <span id="yang-label">양 (陽)</span><span id="yin-label">음 (陰)</span>
+            </div>
+            <div class="yin-yang-bar"><div class="yin-yang-fill" id="yin-yang-fill" style="width:50%"></div></div>
+            <div style="font-size:11px;color:var(--gold);text-align:center;" id="yinyang-desc">—</div>
+          </div>
+          <div style="font-size:11px;color:#8a7e70;margin-bottom:10px;">주요 십성</div>
+          <div class="ten-gods-wrap" id="ten-gods-wrap"></div>
+        </div>
       </div>
     </div>
 
+    <!-- 서브페이지: AI 해석 -->
+    <div class="result-subpage" id="rsp-interp">
     <!-- AI 해석 탭 -->
     <div class="section">
       <div class="section-title"><span class="dot"></span>당신의 사주를 꿰뚫어 보는중</div>
@@ -1411,12 +1475,20 @@ nav {
       </div>
     </div>
 
+    </div><!-- /rsp-interp -->
+
+    <!-- 서브페이지: 대운 -->
+    <div class="result-subpage" id="rsp-daewoon">
     <!-- 대운 -->
     <div class="section" id="daewoon-section" style="padding:28px 0;">
       <div style="padding:0 28px;"><div class="section-title"><span class="dot"></span>대운 흐름</div></div>
       <div class="daewoon-timeline" id="daewoon-timeline"></div>
     </div>
 
+    </div><!-- /rsp-daewoon -->
+
+    <!-- 서브페이지: 운명 (궁합추천+기운보충+운명의작대기) -->
+    <div class="result-subpage" id="rsp-destiny">
     <!-- 궁합 잘 맞는 / 안 맞는 사람 -->
     <div class="compat-section" id="compat-section">
       <div class="compat-title"><span class="compat-dot"></span>이런 사람이랑 케미 폭발해요 </div>
@@ -1452,6 +1524,10 @@ nav {
       </button>
     </div>
 
+    </div><!-- /rsp-destiny -->
+
+    <!-- 서브페이지: 루나 채팅 -->
+    <div class="result-subpage" id="rsp-luna">
     <!-- 루나에게 물어보기 -->
     <div class="luna-chat-section" id="luna-chat-section">
       <div class="luna-chat-header">
@@ -1500,7 +1576,9 @@ nav {
       </div>
     </div>
 
-    <!-- 공유 & 이동 버튼 -->
+    </div><!-- /rsp-luna -->
+
+    <!-- 공유 & 이동 버튼 (항상 표시) -->
     <div class="share-bar">
       <button class="share-btn share-btn-kakao" onclick="shareKakao()">
         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.477 3 2 6.477 2 10.8c0 2.7 1.6 5.1 4 6.6l-1 3.7 4.3-2.8c.9.1 1.8.2 2.7.2 5.523 0 10-3.477 10-7.7S17.523 3 12 3z"/></svg>
@@ -2596,6 +2674,8 @@ function renderResult(chart) {
 
   // 궁합추천 + 기운보충 렌더링
   renderCompatAndEnergy(chart);
+  // 메인 탭 초기화 (사주원국 탭으로 리셋)
+  switchResultPage("origin", document.querySelector(".rmt-btn"));
   // 루나 채팅 초기화
   initLunaChat(chart);
   // 운명의 작대기 렌더링
@@ -3680,6 +3760,28 @@ function showAIResult(container, fullText, cacheKey) {
       <div class="body-text">${formatAIText(fullText)}</div>
     </div>`;
   appendKeywords(cacheKey, fullText, container);
+}
+
+
+// ── 결과 메인 탭 전환
+function switchResultPage(name, btn) {
+  document.querySelectorAll('.result-subpage').forEach(function(p){ p.classList.remove('active'); });
+  document.querySelectorAll('.rmt-btn').forEach(function(b){ b.classList.remove('active'); });
+  var page = document.getElementById('rsp-' + name);
+  if (page) page.classList.add('active');
+  if (btn) btn.classList.add('active');
+
+  // 탭별 초기화
+  if (name === 'interp' && currentChart && !tabCache['personality']) {
+    loadTabInterpretation('personality');
+  }
+  if (name === 'daewoon') {
+    var dw = document.getElementById('daewoon-section');
+    if (dw) dw.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  if (name === 'luna' && currentChart) {
+    setTimeout(function(){ document.getElementById('luna-input').focus(); }, 300);
+  }
 }
 
 function switchTab(name, btn) {
