@@ -221,7 +221,7 @@ nav {
 .ai-interp-block {
   padding:24px 26px; background:#f5f0e8;
   border:1px solid rgba(26,20,16,0.12); border-radius:16px; margin-bottom:14px;
-  position:relative; overflow:hidden;
+  position:relative; overflow:visible;
 }
 .ai-interp-block::before {
   content:''; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--gold);
@@ -236,7 +236,7 @@ nav {
 }
 .ai-interp-block .body-text {
   font-size:14px; color:#3d332a; line-height:2;
-  font-weight:300; white-space:pre-wrap; word-break:keep-all;
+  font-weight:300; word-break:keep-all; overflow-wrap:break-word;
 }
 .ai-interp-block .body-text strong { font-weight:500; color:#1a1410; }
 .keyword-wrap { display:flex; flex-wrap:wrap; gap:6px; margin-top:14px; }
@@ -4102,23 +4102,23 @@ ${baseCtx}
 3. **상반기(1~6월)와 하반기(7~12월)의 흐름 차이**
 4. **이 해를 잘 보내는 방법** — 해야 할 것과 하지 말아야 할 것
 
-반드시 3000자 이상 5000자 이내로 구체적인 상황 예시를 풍부하게 포함해서 작성하세요.`,
+반드시 3500자 이상 5000자 이내로 구체적인 상황 예시를 풍부하게 포함해서 작성하세요.`,
 
     career: `사주명리 전문가로서 ${year}년 직업·사업운을 풀이해주세요.
 ${baseCtx}
-직업운, 승진, 이직, 사업 등 사회적 활동에 관한 세운 풀이를 구체적 예시와 함께 반드시 3000자 이상 5000자 이내로 작성하세요.`,
+직업운, 승진, 이직, 사업 등 사회적 활동에 관한 세운 풀이를 구체적 예시와 함께 반드시 3500자 이상 5000자 이내로 작성하세요.`,
 
     love: `사주명리 전문가로서 ${year}년 연애·결혼운을 풀이해주세요.
 ${baseCtx}
-연애운, 결혼운, 이성관계, 기존 관계의 변화 등을 구체적 예시와 함께 반드시 3000자 이상 5000자 이내로 작성하세요.`,
+연애운, 결혼운, 이성관계, 기존 관계의 변화 등을 구체적 예시와 함께 반드시 3500자 이상 5000자 이내로 작성하세요.`,
 
     wealth: `사주명리 전문가로서 ${year}년 재물운을 풀이해주세요.
 ${baseCtx}
-수입, 투자, 지출, 재물의 흐름을 구체적 예시와 함께 반드시 3000자 이상 5000자 이내로 작성하세요.`,
+수입, 투자, 지출, 재물의 흐름을 구체적 예시와 함께 반드시 3500자 이상 5000자 이내로 작성하세요.`,
 
     health: `사주명리 전문가로서 ${year}년 건강운을 풀이해주세요.
 ${baseCtx}
-주의해야 할 신체 부위, 건강 관리법, 정신 건강을 구체적 예시와 함께 반드시 3000자 이상 5000자 이내로 작성하세요.`,
+주의해야 할 신체 부위, 건강 관리법, 정신 건강을 구체적 예시와 함께 반드시 3500자 이상 5000자 이내로 작성하세요.`,
   };
 
   const swMsgs = {
