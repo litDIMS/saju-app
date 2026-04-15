@@ -3918,7 +3918,7 @@ async function sendLunaMsg2(presetText) {
   var typing = document.createElement('div');
   typing.className = 'chat-bubble-wrap luna';
   typing.id = 'luna-typing2';
-  typing.innerHTML = '<img src="/Luna.png" class="chat-avatar-sm" onerror="this.style.display='none'"><div><div class="chat-bubble typing"><span class="chat-typing-dot"></span><span class="chat-typing-dot"></span><span class="chat-typing-dot"></span></div></div>';
+  typing.innerHTML = '<img src="/Luna.png" class="chat-avatar-sm" onerror="this.style.display=\'none\'"><div><div class="chat-bubble typing"><span class="chat-typing-dot"></span><span class="chat-typing-dot"></span><span class="chat-typing-dot"></span></div></div>';
   msgs2.appendChild(typing);
   msgs2.scrollTop = msgs2.scrollHeight;
 
@@ -3940,7 +3940,7 @@ async function sendLunaMsg2(presetText) {
     var ts = now2.getHours() + ':' + String(now2.getMinutes()).padStart(2,'0');
     var bWrap = document.createElement('div');
     bWrap.className = 'chat-bubble-wrap luna';
-    bWrap.innerHTML = '<img src="/Luna.png" class="chat-avatar-sm" onerror="this.style.display='none'"><div><div class="chat-bubble luna" id="luna-stream-bubble2"></div><div class="chat-time">루나 · ' + ts + '</div></div>';
+    bWrap.innerHTML = '<img src="/Luna.png" class="chat-avatar-sm" onerror="this.style.display=\'none\'"><div><div class="chat-bubble luna" id="luna-stream-bubble2"></div><div class="chat-time">루나 · ' + ts + '</div></div>';
     msgs2.appendChild(bWrap);
     var bubbleEl = document.getElementById('luna-stream-bubble2');
     var replyText = '';
