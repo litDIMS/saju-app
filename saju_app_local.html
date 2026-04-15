@@ -3760,6 +3760,22 @@ async function sendLunaMsg(presetText) {
     bubbleEl.classList.remove('luna-cursor');
     bubbleEl.id = '';
 
+    // 별 1개 차감 (응답 완료 후)
+    if (replyText && currentUser) {
+      currentUser.stars = Math.max(0, currentUser.stars - 1);
+      updateLoginUI(currentUser);
+      showStarToast('루나 채팅 -★1  잔액: ★' + currentUser.stars);
+      // 서버에도 별 차감 요청
+      const token = localStorage.getItem('orbit_token');
+      if (token) {
+        fetch('/api/use-stars', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', 'authorization': 'Bearer ' + token },
+          body: JSON.stringify({ amount: 1, type: 'luna_chat' }),
+        }).catch(() => {});
+      }
+    }
+
     // 히스토리 저장 (최대 10턴)
     if (replyText) {
       lunaChatHistory.push({ role: 'assistant', content: replyText });
@@ -3878,9 +3894,18 @@ function unlockInterp(cacheKey, btn) {
   }
 
   // 별 차감
-  currentUser.stars -= COST;
+  currentUser.stars = Math.max(0, currentUser.stars - COST);
   updateLoginUI(currentUser);
-  showStarToast('-★' + COST + '  잔액: ★' + currentUser.stars);
+  showStarToast('풀이 더보기 -★' + COST + '  잔액: ★' + currentUser.stars);
+  // 서버에도 별 차감 요청
+  const token = localStorage.getItem('orbit_token');
+  if (token) {
+    fetch('/api/use-stars', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'authorization': 'Bearer ' + token },
+      body: JSON.stringify({ amount: COST, type: 'saju_interp' }),
+    }).catch(() => {});
+  }
 
   // 잠금 해제 (세션 저장)
   const unlockedKey = 'orbit_unlocked_' + getChartKey() + '_' + cacheKey;
@@ -5011,6 +5036,19 @@ function switchSewoonTab(name, btn) {
 let currentUser = null;
 
 function loginKakao() {
+  // 현재 화면 상태 저장 (로그인 후 복원용)
+  const state = {
+    screen: document.querySelector('.screen.active')?.id || 'home',
+    hasChart: !!currentChart,
+  };
+  if (currentChart) {
+    state.chart = {
+      year: currentChart.year, month: currentChart.month,
+      day: currentChart.day, hour: currentChart.hour,
+      name: currentChart.name, gender: currentChart.gender,
+    };
+  }
+  localStorage.setItem('orbit_pre_login_state', JSON.stringify(state));
   window.location.href = '/auth/kakao';
 }
 
@@ -5127,8 +5165,38 @@ async function initAuth() {
 
   if (tokenFromUrl) {
     localStorage.setItem('orbit_token', tokenFromUrl);
-    // URL 정리
     window.history.replaceState({}, '', '/');
+
+    // 로그인 전 상태 복원
+    try {
+      const preState = JSON.parse(localStorage.getItem('orbit_pre_login_state') || '{}');
+      localStorage.removeItem('orbit_pre_login_state');
+
+      if (preState.chart) {
+        // 이전에 사주 조회 중이었으면 자동 재계산
+        const c = preState.chart;
+        setTimeout(() => {
+          const yi = document.getElementById('birth-year');
+          const mi = document.getElementById('birth-month');
+          const di = document.getElementById('birth-day');
+          const hi = document.getElementById('birth-hour');
+          const ni = document.getElementById('birth-name');
+          if (yi) yi.value = c.year;
+          if (mi) mi.value = c.month;
+          if (di) di.value = c.day;
+          if (hi) hi.value = c.hour !== null && c.hour !== undefined ? c.hour : '';
+          if (ni) ni.value = c.name || '';
+          if (c.gender) {
+            selectedGender = c.gender;
+            document.querySelectorAll('.gender-btn').forEach(b => {
+              b.classList.toggle('selected', b.dataset.gender === c.gender);
+            });
+          }
+          // 자동으로 사주 재계산 후 결과 화면으로
+          if (typeof startCalc === 'function') startCalc();
+        }, 500);
+      }
+    } catch(e) {}
   }
   if (loginFail === 'fail') {
     alert('로그인에 실패했어요. 다시 시도해달라옹!');
