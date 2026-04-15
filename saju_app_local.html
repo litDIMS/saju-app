@@ -26,6 +26,7 @@
 <meta name="twitter:title"       content="OR-BIT 오르빗">
 <meta name="twitter:description" content="마법고양이 루나가 당신의 사주를 읽어드릴게요">
 <meta name="twitter:image"       content="https://4ju.kr/og-image.png">
+<script src="https://cdn.portone.io/v2/browser-sdk.js"></script>
 <script src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.2/kakao.min.js" crossorigin="anonymous"></script>
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7771155449664842"
      crossorigin="anonymous"></script>
@@ -5230,29 +5231,103 @@ function showChargeModal() {
       <div style="font-family:'Noto Serif KR',serif;font-size:18px;font-weight:600;color:#1a1410;margin-bottom:6px;">★ 별 충전</div>
       <div style="font-size:13px;color:#8a7e70;margin-bottom:20px;">현재 잔액: <strong style="color:#c9a84c;">★ ${stars}</strong></div>
       <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;">
-        <div style="background:#fff;border:1px solid rgba(26,20,16,0.1);border-radius:12px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;">
+        <div onclick="startPayment('stars10', this)" style="background:#fff;border:1px solid rgba(26,20,16,0.1);border-radius:12px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;transition:all .2s;" onmouseover="this.style.borderColor='#c9a84c'" onmouseout="this.style.borderColor='rgba(26,20,16,0.1)'">
           <div><div style="font-size:14px;font-weight:600;color:#1a1410;">★ 10별</div><div style="font-size:11px;color:#8a7e70;margin-top:2px;">사주 1회 + 여유분</div></div>
           <div style="font-size:15px;font-weight:700;color:#1a1410;">1,000원</div>
         </div>
-        <div style="background:#fff;border:1px solid rgba(201,168,76,0.3);border-radius:12px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;position:relative;">
+        <div onclick="startPayment('stars50', this)" style="background:#fff;border:1px solid rgba(201,168,76,0.3);border-radius:12px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;transition:all .2s;position:relative;" onmouseover="this.style.borderColor='#c9a84c'" onmouseout="this.style.borderColor='rgba(201,168,76,0.3)'">
           <div style="position:absolute;top:-10px;left:14px;background:#c9a84c;color:#1a1410;font-size:10px;font-weight:700;padding:2px 10px;border-radius:99px;">인기</div>
           <div><div style="font-size:14px;font-weight:600;color:#1a1410;">★ 50별</div><div style="font-size:11px;color:#8a7e70;margin-top:2px;">사주 5회 + 루나채팅 5회</div></div>
           <div style="font-size:15px;font-weight:700;color:#1a1410;">4,500원</div>
         </div>
-        <div style="background:#fff;border:1px solid rgba(26,20,16,0.1);border-radius:12px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;">
+        <div onclick="startPayment('stars100', this)" style="background:#fff;border:1px solid rgba(26,20,16,0.1);border-radius:12px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;transition:all .2s;" onmouseover="this.style.borderColor='#c9a84c'" onmouseout="this.style.borderColor='rgba(26,20,16,0.1)'">
           <div><div style="font-size:14px;font-weight:600;color:#1a1410;">★ 100별</div><div style="font-size:11px;color:#8a7e70;margin-top:2px;">사주 10회 + 루나채팅 10회</div></div>
           <div style="font-size:15px;font-weight:700;color:#1a1410;">9,000원</div>
         </div>
       </div>
-      <button onclick="this.closest('[style]').remove()" style="display:block;width:100%;background:#1a1410;color:#f5f0e8;border:none;border-radius:12px;padding:14px;font-size:14px;font-weight:600;cursor:pointer;font-family:'Noto Sans KR',sans-serif;margin-bottom:8px;">
-        카카오페이로 충전하기 (준비 중)
-      </button>
-      <button onclick="this.closest('[style]').remove()" style="display:block;width:100%;background:none;border:none;color:#8a7e70;font-size:13px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;padding:8px;">
+      <div style="font-size:11px;color:#8a7e70;text-align:center;margin-bottom:12px;">카카오페이로 안전하게 결제해요</div>
+      <button onclick="this.closest('[style*=fixed]').remove()" style="display:block;width:100%;background:none;border:1px solid rgba(26,20,16,0.1);border-radius:12px;padding:10px;font-size:13px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;color:#8a7e70;">
         닫기
       </button>
     </div>`;
   overlay.onclick = e => { if (e.target === overlay) overlay.remove(); };
   document.body.appendChild(overlay);
+}
+
+async function startPayment(packageType, cardEl) {
+  if (!currentUser) { showLoginPrompt(); return; }
+
+  const token = localStorage.getItem('orbit_token');
+  if (!token) { showLoginPrompt(); return; }
+
+  // 로딩 표시
+  if (cardEl) { cardEl.style.opacity = '0.5'; cardEl.style.pointerEvents = 'none'; }
+
+  try {
+    // 서버에서 결제 정보 받기
+    const prepRes = await fetch('/api/payment/prepare', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'authorization': 'Bearer ' + token },
+      body: JSON.stringify({ packageType }),
+    });
+    const prepData = await prepRes.json();
+    if (!prepData.storeId) throw new Error('결제 준비 실패');
+
+    // 모달 닫기
+    document.querySelectorAll('[style*="position:fixed"][style*="inset:0"]').forEach(el => {
+      if (el.querySelector('[style*="background:#f5f0e8"]')) el.remove();
+    });
+
+    // 포트원 V2 결제창 호출
+    const response = await PortOne.requestPayment({
+      storeId: prepData.storeId,
+      channelKey: prepData.channelKey,
+      paymentId: prepData.orderId,
+      orderName: prepData.orderName,
+      totalAmount: prepData.totalAmount,
+      currency: 'KRW',
+      payMethod: 'EASY_PAY',
+      easyPay: { easyPayProvider: 'KAKAOPAY' },
+      customer: {
+        customerId: currentUser.kakaoId,
+        fullName: currentUser.nickname,
+      },
+    });
+
+    if (response.code) {
+      // 결제 실패/취소
+      if (response.code === 'FAILURE_TYPE_PG') {
+        alert('결제가 취소됐어요.');
+      } else {
+        alert('결제 오류: ' + (response.message || response.code));
+      }
+      return;
+    }
+
+    // 결제 성공 → 서버에서 검증 + 별 지급
+    const confirmRes = await fetch('/api/payment/confirm', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'authorization': 'Bearer ' + token },
+      body: JSON.stringify({
+        paymentId: response.paymentId,
+        orderId: prepData.orderId,
+        stars: prepData.stars,
+      }),
+    });
+    const confirmData = await confirmRes.json();
+    if (confirmData.ok) {
+      currentUser.stars = confirmData.stars;
+      updateLoginUI(currentUser);
+      showStarToast('★' + prepData.stars + '별 충전 완료! 잔액: ★' + confirmData.stars);
+    } else {
+      alert('별 지급 오류가 발생했어요. 고객센터에 문의해주세요. (dims94@naver.com)');
+    }
+  } catch(e) {
+    console.error('[결제 오류]', e);
+    alert('결제 중 오류가 발생했어요: ' + e.message);
+  } finally {
+    if (cardEl) { cardEl.style.opacity = '1'; cardEl.style.pointerEvents = 'auto'; }
+  }
 }
 
 // 페이지 로드 시 인증 초기화
