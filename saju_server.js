@@ -260,7 +260,7 @@ const server = http.createServer((req, res) => {
                 if (!USERS[kakaoId]) {
                   USERS[kakaoId] = {
                     kakaoId, nickname, imgUrl,
-                    stars: 9,          // 신규 가입 9별 무상 지급
+                    stars: 10,         // 신규 가입 10별 무상 지급
                     createdAt: new Date().toISOString(),
                   };
                   saveUsers();
