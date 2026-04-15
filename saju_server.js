@@ -476,6 +476,149 @@ const server = http.createServer((req, res) => {
   }
 
   // -- /api/saju -> Anthropic 프록시
+
+  // =============================================
+  // /api/use-stars - 별 차감
+  // =============================================
+  if (req.method === 'POST' && req.url === '/api/use-stars') {
+    let body = '';
+    req.on('data', c => body += c);
+    req.on('end', () => {
+      try {
+        const auth = req.headers.authorization || '';
+        const token = auth.replace('Bearer ', '').trim();
+        const payload = verifyJWT(token);
+        if (!payload) {
+          res.writeHead(401, {'Content-Type':'application/json','Access-Control-Allow-Origin':'*'});
+          res.end(JSON.stringify({error:'unauthorized'})); return;
+        }
+        const { amount } = JSON.parse(body);
+        const user = USERS[payload.kakaoId];
+        if (!user) {
+          res.writeHead(404, {'Content-Type':'application/json','Access-Control-Allow-Origin':'*'});
+          res.end(JSON.stringify({error:'user not found'})); return;
+        }
+        if ((user.stars || 0) < amount) {
+          res.writeHead(400, {'Content-Type':'application/json','Access-Control-Allow-Origin':'*'});
+          res.end(JSON.stringify({error:'insufficient stars', stars: user.stars})); return;
+        }
+        user.stars = Math.max(0, (user.stars || 0) - amount);
+        saveUsers();
+        console.log('[별 차감] ' + user.nickname + ' -' + amount + '별 잔액:' + user.stars);
+        res.writeHead(200, {'Content-Type':'application/json','Access-Control-Allow-Origin':'*'});
+        res.end(JSON.stringify({ok: true, stars: user.stars}));
+      } catch(e) { res.writeHead(400); res.end('Bad Request'); }
+    });
+    return;
+  }
+
+  // =============================================
+  // 포트원 결제 API
+  // =============================================
+  if (req.method === 'POST' && req.url === '/api/payment/prepare') {
+    let body = '';
+    req.on('data', c => body += c);
+    req.on('end', () => {
+      try {
+        const auth = req.headers.authorization || '';
+        const token = auth.replace('Bearer ', '').trim();
+        const payload = verifyJWT(token);
+        if (!payload) {
+          res.writeHead(401, {'Content-Type':'application/json','Access-Control-Allow-Origin':'*'});
+          res.end(JSON.stringify({error:'unauthorized'})); return;
+        }
+        const { packageType } = JSON.parse(body);
+        const packages = {
+          'stars10':  { amount: 1000,  stars: 10,  name: 'OR-BIT 별 10개' },
+          'stars50':  { amount: 4500,  stars: 50,  name: 'OR-BIT 별 50개' },
+          'stars100': { amount: 9000,  stars: 100, name: 'OR-BIT 별 100개' },
+        };
+        const pkg = packages[packageType];
+        if (!pkg) {
+          res.writeHead(400, {'Content-Type':'application/json','Access-Control-Allow-Origin':'*'});
+          res.end(JSON.stringify({error:'invalid package'})); return;
+        }
+        const orderId = 'orbit-' + payload.kakaoId + '-' + Date.now();
+        res.writeHead(200, {'Content-Type':'application/json','Access-Control-Allow-Origin':'*'});
+        res.end(JSON.stringify({
+          storeId: PORTONE_STORE_ID,
+          channelKey: PORTONE_CHANNEL_KEY,
+          orderId,
+          orderName: pkg.name,
+          totalAmount: pkg.amount,
+          stars: pkg.stars,
+          currency: 'KRW',
+        }));
+      } catch(e) {
+        res.writeHead(400, {'Content-Type':'application/json','Access-Control-Allow-Origin':'*'});
+        res.end(JSON.stringify({error: e.message}));
+      }
+    });
+    return;
+  }
+
+  if (req.method === 'POST' && req.url === '/api/payment/confirm') {
+    let body = '';
+    req.on('data', c => body += c);
+    req.on('end', async () => {
+      try {
+        const auth = req.headers.authorization || '';
+        const token = auth.replace('Bearer ', '').trim();
+        const payload = verifyJWT(token);
+        if (!payload) {
+          res.writeHead(401, {'Content-Type':'application/json','Access-Control-Allow-Origin':'*'});
+          res.end(JSON.stringify({error:'unauthorized'})); return;
+        }
+        const { paymentId, stars } = JSON.parse(body);
+
+        // 포트원 V2 API 결제 검증
+        const verifyData = await new Promise((resolve, reject) => {
+          const opts = {
+            hostname: 'api.portone.io',
+            path: '/payments/' + encodeURIComponent(paymentId),
+            method: 'GET',
+            headers: {
+              'Authorization': 'PortOne ' + PORTONE_API_SECRET,
+              'Content-Type': 'application/json',
+            },
+          };
+          const vreq = https.request(opts, vres => {
+            let d = '';
+            vres.on('data', c => d += c);
+            vres.on('end', () => { try { resolve(JSON.parse(d)); } catch(e) { reject(e); } });
+          });
+          vreq.on('error', reject);
+          vreq.end();
+        });
+
+        console.log('[포트원 검증]', verifyData.status, paymentId);
+
+        if (verifyData.status !== 'PAID') {
+          res.writeHead(400, {'Content-Type':'application/json','Access-Control-Allow-Origin':'*'});
+          res.end(JSON.stringify({error:'payment not completed', status: verifyData.status}));
+          return;
+        }
+
+        const user = USERS[payload.kakaoId];
+        if (!user) {
+          res.writeHead(404, {'Content-Type':'application/json','Access-Control-Allow-Origin':'*'});
+          res.end(JSON.stringify({error:'user not found'})); return;
+        }
+        user.stars = (user.stars || 0) + stars;
+        saveUsers();
+        console.log('[별 지급] ' + user.nickname + ' +' + stars + '별 잔액:' + user.stars);
+
+        res.writeHead(200, {'Content-Type':'application/json','Access-Control-Allow-Origin':'*'});
+        res.end(JSON.stringify({ok: true, stars: user.stars}));
+      } catch(e) {
+        console.error('[결제 확인 오류]', e.message);
+        res.writeHead(500, {'Content-Type':'application/json','Access-Control-Allow-Origin':'*'});
+        res.end(JSON.stringify({error: e.message}));
+      }
+    });
+    return;
+  }
+
   if (req.method === 'POST' && req.url === '/api/saju') {
     const chunks = [];
     req.on('data', chunk => chunks.push(chunk));
