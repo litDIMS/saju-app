@@ -5158,6 +5158,52 @@ function showDestinyNotif(count, latestFriend) {
   }, 8000);
 }
 
+// 모바일 결제 완료 후 리다이렉트 처리
+async function checkPaymentResult() {
+  const params = new URLSearchParams(window.location.search);
+  const paymentId = params.get('paymentId') || params.get('payment_id');
+  const code = params.get('code'); // 실패 코드
+  if (!paymentId && !code) return;
+
+  window.history.replaceState({}, '', '/');
+
+  if (code) {
+    // 결제 취소/실패
+    if (code !== 'FAILURE_TYPE_PG') {
+      showStarToast('결제가 취소됐어요');
+    }
+    return;
+  }
+
+  if (!paymentId) return;
+
+  // 서버에서 검증 + 별 지급
+  const token = localStorage.getItem('orbit_token');
+  if (!token) return;
+
+  const pendingStars = parseInt(sessionStorage.getItem('orbit_pending_stars') || '0');
+  if (!pendingStars) return;
+  sessionStorage.removeItem('orbit_pending_stars');
+
+  try {
+    const confirmRes = await fetch('/api/payment/confirm', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'authorization': 'Bearer ' + token },
+      body: JSON.stringify({ paymentId, stars: pendingStars }),
+    });
+    const confirmData = await confirmRes.json();
+    if (confirmData.ok) {
+      if (currentUser) {
+        currentUser.stars = confirmData.stars;
+        updateLoginUI(currentUser);
+      }
+      showStarToast('★' + pendingStars + '별 충전 완료! 잔액: ★' + confirmData.stars);
+    }
+  } catch(e) {
+    console.error('[모바일 결제 결과 처리 오류]', e);
+  }
+}
+
 async function initAuth() {
   // URL에서 토큰 확인 (카카오 콜백 후)
   const params = new URLSearchParams(window.location.search);
@@ -5278,7 +5324,10 @@ async function startPayment(packageType, cardEl) {
       if (el.querySelector('[style*="background:#f5f0e8"]')) el.remove();
     });
 
-    // 포트원 V2 결제창 호출
+    // 모바일 여부 감지
+    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+    // 포트원 V2 결제창 호출 (모바일: 카카오페이 앱 직접 연동)
     const response = await PortOne.requestPayment({
       storeId: prepData.storeId,
       channelKey: prepData.channelKey,
@@ -5287,12 +5336,27 @@ async function startPayment(packageType, cardEl) {
       totalAmount: prepData.totalAmount,
       currency: 'KRW',
       payMethod: 'EASY_PAY',
-      easyPay: { easyPayProvider: 'KAKAOPAY' },
+      easyPay: {
+        easyPayProvider: 'KAKAOPAY',
+      },
       customer: {
-        customerId: currentUser.kakaoId,
+        customerId: String(currentUser.kakaoId),
         fullName: currentUser.nickname,
       },
+      // 모바일: 카카오페이 앱으로 바로 연결 (QR 우회)
+      bypass: isMobile ? {
+        kakaopay: {
+          custom_message: 'OR-BIT 오르빗 별 충전',
+        }
+      } : undefined,
+      // 결제 완료 후 돌아올 URL (모바일 앱 복귀용)
+      redirectUrl: isMobile ? window.location.origin + '/?paymentId={txId}' : undefined,
     });
+
+    // 모바일: 별 개수 임시 저장 (리다이렉트 후 복원)
+    if (isMobile) {
+      sessionStorage.setItem('orbit_pending_stars', String(prepData.stars));
+    }
 
     if (response.code) {
       // 결제 실패/취소
@@ -5335,6 +5399,7 @@ async function startPayment(packageType, cardEl) {
 // ── 이전 결과 복원 확인 ──
 window.addEventListener('load', function() {
   initAuth();
+  checkPaymentResult();
   if (typeof checkShareParams === 'function') checkShareParams();
 
   const saved = restoreFromStorage();
