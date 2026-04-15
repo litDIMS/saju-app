@@ -3022,11 +3022,8 @@ function extractBody(para) {
 }
 
 function renderAccordion(container, text, cacheKey) {
-  // DB 로드 시 한번에 전체 표시 (빠른 로딩)
-  container.innerHTML = `<div class="ai-interp-block ai-reveal">
-    <div class="body-text">${formatAIText(text)}</div>
-  </div>`;
-  appendKeywords(cacheKey, text, container);
+  // showAIResult로 통일 (잠금 로직 포함)
+  showAIResult(container, text, cacheKey);
 }
 
 function openSectionCard(card) {
@@ -3130,13 +3127,13 @@ async function loadTabInterpretation(category) {
   if (tabCache[category]) return;
   tabCache[category] = true;
 
+  const container = document.getElementById('tab-' + category);
   // 1순위: localStorage 캐시
   const savedInterps = loadInterpFromStorage();
   if (savedInterps[category]) {
     showAIResult(container, savedInterps[category], category);
     return;
   }
-  const container = document.getElementById('tab-' + category);
   const sectionText = parseSection(fullInterpCache, SECTION_MAP[category]);
   renderAccordion(container, sectionText || '해석을 받아오지 못했습니다.', category);
 }
