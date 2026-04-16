@@ -1377,6 +1377,24 @@ nav {
   animation:fadeUp .3s ease;
   box-shadow:0 4px 16px rgba(0,0,0,.25);
 }
+
+/* -- 탭 하단 다음 선택 버튼 */
+.tab-next-btn {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:12px 14px;
+  background:#fff; border:1px solid rgba(26,20,16,0.1);
+  border-radius:12px; cursor:pointer;
+  font-size:13px; font-weight:500; color:#1a1410;
+  font-family:'Noto Sans KR',sans-serif;
+  transition:all .2s;
+}
+.tab-next-btn:hover { border-color:#c9a84c; background:rgba(201,168,76,0.05); }
+.tab-cost-badge {
+  font-size:10px; font-weight:700;
+  background:rgba(201,168,76,0.15); color:#c9a84c;
+  padding:2px 7px; border-radius:99px;
+  margin-left:auto;
+}
 </style>
 </head>
 <body>
@@ -1552,6 +1570,24 @@ nav {
       <div id="tab-love"        class="interp-content"></div>
       <div id="tab-health"      class="interp-content"></div>
       <div id="tab-wealth"      class="interp-content"></div>
+      <!-- 탭 하단 다음 탭 선택 버튼 -->
+      <div id="tab-next-row" style="display:none;margin-top:20px;padding-top:16px;border-top:1px solid rgba(26,20,16,0.08);">
+        <div style="font-size:12px;color:#8a7e70;margin-bottom:10px;text-align:center;">다음으로 볼 해석을 선택하세요</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <button class="tab-next-btn" onclick="switchTab('career',document.querySelector('[onclick*=career]'))">
+            💼 직업·적성 <span class="tab-cost-badge">★6</span>
+          </button>
+          <button class="tab-next-btn" onclick="switchTab('love',document.querySelector('[onclick*=love]'))">
+            💕 연애·결혼 <span class="tab-cost-badge">★6</span>
+          </button>
+          <button class="tab-next-btn" onclick="switchTab('health',document.querySelector('[onclick*=health]'))">
+            🌿 건강 <span class="tab-cost-badge">★6</span>
+          </button>
+          <button class="tab-next-btn" onclick="switchTab('wealth',document.querySelector('[onclick*=wealth]'))">
+            💰 재물운 <span class="tab-cost-badge">★6</span>
+          </button>
+        </div>
+      </div>
       <div class="tab-nav-footer" id="tab-nav-footer">
         <button class="tab-nav-prev" id="tab-prev-btn" onclick="moveTab(-1)">이전</button>
         <button class="tab-nav-next" id="tab-next-btn" onclick="moveTab(1)">다음 해석 보기</button>
@@ -1562,6 +1598,22 @@ nav {
     <div class="section" id="daewoon-section" style="padding:28px 0;">
       <div style="padding:0 28px;"><div class="section-title"><span class="dot"></span>대운 흐름</div></div>
       <div class="daewoon-timeline" id="daewoon-timeline"></div>
+      <!-- 세운·년운 버튼 -->
+      <div style="padding:20px 28px 0;">
+        <button onclick="goSewoon()" style="display:flex;align-items:center;justify-content:space-between;width:100%;padding:16px 20px;background:linear-gradient(135deg,rgba(201,168,76,0.12),rgba(201,168,76,0.04));border:1px solid rgba(201,168,76,0.3);border-radius:14px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;transition:all .2s;" onmouseover="this.style.background='rgba(201,168,76,0.18)'" onmouseout="this.style.background='linear-gradient(135deg,rgba(201,168,76,0.12),rgba(201,168,76,0.04))'">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#c9a84c" stroke-width="2" style="width:22px;height:22px;flex-shrink:0;"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <div style="text-align:left;">
+              <div style="font-size:14px;font-weight:600;color:#1a1410;">★ 세운·년운 보기</div>
+              <div style="font-size:11px;color:#8a7e70;margin-top:2px;">올해와 내년의 운세 흐름을 확인하세요</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="background:#c9a84c;color:#1a1410;font-size:11px;font-weight:700;padding:3px 10px;border-radius:99px;">★9</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="#c9a84c" stroke-width="2" style="width:16px;height:16px;"><polyline points="9 18 15 12 9 6"/></svg>
+          </div>
+        </button>
+      </div>
     </div>
 
     <!-- 궁합 추천 + 기운보충 -->
@@ -3833,26 +3885,50 @@ async function fetchAI(prompt, maxTokens) {
   return fullText;
 }
 
+// 카테고리별 별 비용 설정
+const INTERP_COST = {
+  personality: 0,   // 무료
+  career: 6,
+  love: 6,
+  health: 6,
+  wealth: 6,
+};
+// 카테고리 한글명
+const INTERP_NAME = {
+  personality: '기본 성격',
+  career: '직업·적성',
+  love: '연애·결혼',
+  health: '건강',
+  wealth: '재물운',
+};
+
 function showAIResult(container, fullText, cacheKey) {
-  const PREVIEW_LEN = 1000;
+  const PREVIEW_LEN = 500;
+  const cost = INTERP_COST[cacheKey] !== undefined ? INTERP_COST[cacheKey] : 6;
+  const isFree = cost === 0;
   const isLong = fullText.length > PREVIEW_LEN;
 
-  // 이미 별을 사용해서 잠금 해제된 카테고리인지 확인
+  // 이미 잠금 해제됐거나 무료 카테고리
   const unlockedKey = 'orbit_unlocked_' + (currentChart ? getChartKey() : '') + '_' + cacheKey;
-  const isUnlocked = sessionStorage.getItem(unlockedKey) === '1';
+  const isUnlocked = isFree || sessionStorage.getItem(unlockedKey) === '1';
 
   if (!isLong || isUnlocked) {
-    // 전체 표시
     container.innerHTML = `
       <div class="ai-interp-block ai-reveal">
         <div class="body-text">${formatAIText(fullText)}</div>
       </div>`;
     appendKeywords(cacheKey, fullText, container);
+    // 기본성격 탭이면 하단 다음 탭 버튼 표시
+    if (cacheKey === 'personality') {
+      const nextRow = document.getElementById('tab-next-row');
+      if (nextRow) nextRow.style.display = 'block';
+    }
     return;
   }
 
-  // 미리보기 (1000자) + 잠금 카드
+  // 미리보기 500자 + 잠금 카드
   const previewText = fullText.slice(0, PREVIEW_LEN);
+  const catName = INTERP_NAME[cacheKey] || '해석';
   container.innerHTML = `
     <div class="ai-interp-block ai-reveal interp-preview-wrap">
       <div class="interp-blur">
@@ -3860,13 +3936,13 @@ function showAIResult(container, fullText, cacheKey) {
       </div>
       <div class="interp-unlock-card">
         <div class="interp-unlock-icon">✨</div>
-        <div class="interp-unlock-title">풀이 더 보기</div>
+        <div class="interp-unlock-title">${catName} 전체 풀이 보기</div>
         <div class="interp-unlock-desc">
-          별 9개를 사용하면 전체 풀이를 볼 수 있어요<br>
+          별 ${cost}개를 사용하면 전체 풀이를 볼 수 있어요<br>
           <span style="color:#c9a84c;font-weight:500;">현재 잔액: ★ ${currentUser ? currentUser.stars : 0}</span>
         </div>
-        <button class="interp-unlock-btn" onclick="unlockInterp('${cacheKey}', this)" data-full="${encodeURIComponent(fullText)}">
-          ★ 9개로 전체 풀이 보기
+        <button class="interp-unlock-btn" onclick="unlockInterp('${cacheKey}', this)" data-full="${encodeURIComponent(fullText)}" data-cost="${cost}">
+          ★ ${cost}개로 전체 풀이 보기
         </button>
         ${!currentUser ? '<div class="interp-login-hint"><a onclick="loginKakao()">카카오 로그인</a>하고 별 10개 무료로 받기 🎁</div>' : ''}
       </div>
@@ -3880,35 +3956,27 @@ function getChartKey() {
 }
 
 function unlockInterp(cacheKey, btn) {
-  const COST = 9;
+  const COST = parseInt(btn.dataset.cost || '6');
 
-  // 비로그인
-  if (!currentUser) {
-    showLoginPrompt();
-    return;
-  }
-
-  // 별 부족
-  if (currentUser.stars < COST) {
-    showChargeModal();
-    return;
-  }
+  if (!currentUser) { showLoginPrompt(); return; }
+  if (currentUser.stars < COST) { showChargeModal(); return; }
 
   // 별 차감
   currentUser.stars = Math.max(0, currentUser.stars - COST);
   updateLoginUI(currentUser);
-  showStarToast('풀이 더보기 -★' + COST + '  잔액: ★' + currentUser.stars);
-  // 서버에도 별 차감 요청
+  const catName = INTERP_NAME[cacheKey] || '해석';
+  showStarToast(catName + ' -★' + COST + '  잔액: ★' + currentUser.stars);
+
   const token = localStorage.getItem('orbit_token');
   if (token) {
     fetch('/api/use-stars', {
       method: 'POST',
       headers: { 'content-type': 'application/json', 'authorization': 'Bearer ' + token },
-      body: JSON.stringify({ amount: COST, type: 'saju_interp' }),
+      body: JSON.stringify({ amount: COST, type: 'saju_interp_' + cacheKey }),
     }).catch(() => {});
   }
 
-  // 잠금 해제 (세션 저장)
+  // 잠금 해제 세션 저장
   const unlockedKey = 'orbit_unlocked_' + getChartKey() + '_' + cacheKey;
   sessionStorage.setItem(unlockedKey, '1');
 
@@ -3922,6 +3990,16 @@ function unlockInterp(cacheKey, btn) {
       </div>`;
     appendKeywords(cacheKey, fullText, container);
   }
+}
+
+function goSewoon() {
+  if (!currentUser) { showLoginPrompt(); return; }
+  const COST = 9;
+  if (currentUser.stars < COST) {
+    showChargeModal();
+    return;
+  }
+  showScreen('sewoon');
 }
 
 function showLoginPrompt() {
